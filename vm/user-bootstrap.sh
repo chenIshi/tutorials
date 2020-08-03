@@ -39,6 +39,8 @@ cd ../..
 git clone https://github.com/grpc/grpc.git
 cd grpc
 git checkout ${GRPC_COMMIT}
+sed -i "s/https:\/\/boringssl.googlesource.com\/boringssl/https:\/\/github.com\/google\/boringssl.git/g" .gitmodules
+git submodule sync
 git submodule update --init --recursive
 export LDFLAGS="-Wl,-s"
 make -j${NUM_CORES}
