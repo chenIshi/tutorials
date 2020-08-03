@@ -1,5 +1,13 @@
 # P4 Tutorial
 
+*Providing access support within China*
+
+*Since the [official VM image (within china) is no longer maintained](https://github.com/p4lang/tutorials/issues/352)*
+*, and vagrant build is failed by [GRPC dependencies](https://github.com/grpc/grpc/issues/12377)*
+*, the official installation seems to fail most of the time with no further modification*
+
+*Currently I just add a patch that replace dependencies fetched location in vm/user-user-bootstrap.sh*
+
 If you are reading this while not attending a live P4 tutorial class,
 see [below](#older-tutorials) for links to information about recently
 given live classes.
