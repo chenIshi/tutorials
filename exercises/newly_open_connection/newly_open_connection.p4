@@ -132,12 +132,12 @@ control MyIngress(inout headers hdr,
     }
 
     action compute_hashes(ip4Addr_t ipAddr) {
-        hash(count_index, HashAlgorithm.crc16, (bit<32>)0, {ipAddr,
-                                                           },
-                                                           (bit<32>)flow_counts);
-        hash(sip_index, HashAlgorithm.crc16, (bit<32>)0, {ipAddr,
-                                                           },
-                                                           (bit<32>)flow_sips);
+        hash(count_index, HashAlgorithm.crc16, (bit<32>)0, 
+						{ipAddr},
+                                                           (bit<32>)BLOOM_FILTER_ENTRIES);
+        hash(sip_index, HashAlgorithm.crc16, (bit<32>)0, 
+						{ipAddr},
+                                                           (bit<32>)BLOOM_FILTER_ENTRIES);
     }
 
     action ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {

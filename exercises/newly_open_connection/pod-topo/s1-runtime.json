@@ -1,19 +1,8 @@
 {
   "target": "bmv2",
-  "p4info": "build/firewall.p4.p4info.txt",
-  "bmv2_json": "build/firewall.json",
+  "p4info": "build/newly_open_connection.p4.p4info.txt",
+  "bmv2_json": "build/newly_open_connection.json",
   "table_entries": [
-    {
-      "table": "MyIngress.check_ports",
-      "match": {
-        "standard_metadata.ingress_port": 1,
-        "standard_metadata.egress_spec": 3
-      },
-      "action_name": "MyIngress.set_direction",
-      "action_params": {
-        "dir": 0
-      }
-    },
     {
       "table": "MyIngress.ipv4_lpm",
       "default_action": true,
