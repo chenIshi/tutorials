@@ -78,8 +78,6 @@ def writeFlowCountQuery(p4info_helper, switch, query_id, dst_ip_addr, dst_ip_mas
     
     switch.WriteTableEntry(table_entry)
 
-def writeQueryAggrRule(p4info_helper, switch, query_id):
-
 def main(p4info_file_path, bmv2_file_path):
     # Instantiate a P4Runtime helper from the p4info file
     p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
@@ -272,59 +270,59 @@ def main(p4info_file_path, bmv2_file_path):
                     dst_mac_addr="08:00:00:00:03:00", dst_port=3)
         writeL2Forwarding(p4info_helper, switch=s1, dst_ip_addr="10.2.10.2", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:03:00", dst_port=3)
-        writeL2Forwarding(p4info_helper, switch=s1, dst_ip_addr="10.2.12.10", dst_ip_mask=24,
+        writeL2Forwarding(p4info_helper, switch=s1, dst_ip_addr="10.2.12.0", dst_ip_mask=24,
                     dst_mac_addr="08:00:00:00:03:00", dst_port=3)
-        writeL2Forwarding(p4info_helper, switch=s1, dst_ip_addr="10.2.11.7", dst_ip_mask=24,
+        writeL2Forwarding(p4info_helper, switch=s1, dst_ip_addr="10.2.11.0", dst_ip_mask=24,
                     dst_mac_addr="08:00:00:00:03:00", dst_port=3)
 
         writeL2Forwarding(p4info_helper, switch=s2, dst_ip_addr="10.2.10.3", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:03:00", dst_port=4)
         writeL2Forwarding(p4info_helper, switch=s2, dst_ip_addr="10.2.10.1", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:03:00", dst_port=4)
-        writeL2Forwarding(p4info_helper, switch=s2, dst_ip_addr="10.2.12.10", dst_ip_mask=24,
+        writeL2Forwarding(p4info_helper, switch=s2, dst_ip_addr="10.2.12.0", dst_ip_mask=24,
                     dst_mac_addr="08:00:00:00:03:00", dst_port=4)
-        writeL2Forwarding(p4info_helper, switch=s2, dst_ip_addr="10.2.11.7", dst_ip_mask=24,
+        writeL2Forwarding(p4info_helper, switch=s2, dst_ip_addr="10.2.11.0", dst_ip_mask=24,
                     dst_mac_addr="08:00:00:00:03:00", dst_port=4)
 
         writeL2Forwarding(p4info_helper, switch=s3, dst_ip_addr="10.2.10.1", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:01:00", dst_port=1)
         writeL2Forwarding(p4info_helper, switch=s3, dst_ip_addr="10.2.10.2", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:02:00", dst_port=2)
-        writeL2Forwarding(p4info_helper, switch=s3, dst_ip_addr="10.2.12.10", dst_ip_mask=24,
+        writeL2Forwarding(p4info_helper, switch=s3, dst_ip_addr="10.2.12.0", dst_ip_mask=24,
                     dst_mac_addr="08:00:00:00:0a:00", dst_port=4)
-        writeL2Forwarding(p4info_helper, switch=s3, dst_ip_addr="10.2.11.7", dst_ip_mask=24,
+        writeL2Forwarding(p4info_helper, switch=s3, dst_ip_addr="10.2.11.0", dst_ip_mask=24,
                     dst_mac_addr="08:00:00:00:0a:00", dst_port=4)
 
-        writeL2Forwarding(p4info_helper, switch=s10, dst_ip_addr="10.2.10.1", dst_ip_mask=24,
+        writeL2Forwarding(p4info_helper, switch=s10, dst_ip_addr="10.2.10.0", dst_ip_mask=24,
                     dst_mac_addr="08:00:00:00:03:00", dst_port=1)
-        writeL2Forwarding(p4info_helper, switch=s10, dst_ip_addr="10.2.11.2", dst_ip_mask=24,
+        writeL2Forwarding(p4info_helper, switch=s10, dst_ip_addr="10.2.11.0", dst_ip_mask=24,
                     dst_mac_addr="08:00:00:00:07:00", dst_port=2)
 
         writeL2Forwarding(p4info_helper, switch=s7, dst_ip_addr="10.2.11.5", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:05:00", dst_port=1)
         writeL2Forwarding(p4info_helper, switch=s7, dst_ip_addr="10.2.11.6", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:06:00", dst_port=2)
-        writeL2Forwarding(p4info_helper, switch=s7, dst_ip_addr="10.2.12.10", dst_ip_mask=24,
+        writeL2Forwarding(p4info_helper, switch=s7, dst_ip_addr="10.2.12.0", dst_ip_mask=24,
                     dst_mac_addr="08:00:00:00:0a:00", dst_port=3)
-        writeL2Forwarding(p4info_helper, switch=s7, dst_ip_addr="10.2.10.3", dst_ip_mask=24,
+        writeL2Forwarding(p4info_helper, switch=s7, dst_ip_addr="10.2.10.0", dst_ip_mask=24,
                     dst_mac_addr="08:00:00:00:0a:00", dst_port=3)
 
         writeL2Forwarding(p4info_helper, switch=s5, dst_ip_addr="10.2.11.7", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:07:00", dst_port=3)
         writeL2Forwarding(p4info_helper, switch=s5, dst_ip_addr="10.2.11.6", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:07:00", dst_port=3)
-        writeL2Forwarding(p4info_helper, switch=s5, dst_ip_addr="10.2.12.10", dst_ip_mask=24,
+        writeL2Forwarding(p4info_helper, switch=s5, dst_ip_addr="10.2.12.0", dst_ip_mask=24,
                     dst_mac_addr="08:00:00:00:07:00", dst_port=3)
-        writeL2Forwarding(p4info_helper, switch=s5, dst_ip_addr="10.2.10.3", dst_ip_mask=24,
+        writeL2Forwarding(p4info_helper, switch=s5, dst_ip_addr="10.2.10.0", dst_ip_mask=24,
                     dst_mac_addr="08:00:00:00:07:00", dst_port=3)
 
         writeL2Forwarding(p4info_helper, switch=s6, dst_ip_addr="10.2.11.7", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:07:00", dst_port=4)
         writeL2Forwarding(p4info_helper, switch=s6, dst_ip_addr="10.2.11.5", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:07:00", dst_port=4)
-        writeL2Forwarding(p4info_helper, switch=s6, dst_ip_addr="10.2.12.10", dst_ip_mask=24,
+        writeL2Forwarding(p4info_helper, switch=s6, dst_ip_addr="10.2.12.0", dst_ip_mask=24,
                     dst_mac_addr="08:00:00:00:07:00", dst_port=4)
-        writeL2Forwarding(p4info_helper, switch=s6, dst_ip_addr="10.2.10.3", dst_ip_mask=24,
+        writeL2Forwarding(p4info_helper, switch=s6, dst_ip_addr="10.2.10.0", dst_ip_mask=24,
                     dst_mac_addr="08:00:00:00:07:00", dst_port=4)
 
         ## Also start handle it if it destined for here
@@ -332,8 +330,8 @@ def main(p4info_file_path, bmv2_file_path):
         writeMonitoring(p4info_helper, switch=s6, dst_ip_addr="10.2.11.6")
 
         # Write inspected flow config to monitor switches
-        writeFlowCountQuery(p4info_helper, switch=s5, query_id=1, dst_ip_addr="10.0.1.0", dst_ip_mask=16)
-        writeFlowCountQuery(p4info_helper, switch=s6, query_id=1, dst_ip_addr="10.0.1.0", dst_ip_mask=16)
+        writeFlowCountQuery(p4info_helper, switch=s5, query_id=1, dst_ip_addr="10.0.1.0", dst_ip_mask=24)
+        writeFlowCountQuery(p4info_helper, switch=s6, query_id=1, dst_ip_addr="10.0.1.0", dst_ip_mask=24)
 
         # Write the aggregated flow config to aggr switches
         writeAggregating(p4info_helper, switch=s7, dst_ip_addr="10.0.1.1")
