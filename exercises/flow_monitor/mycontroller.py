@@ -78,6 +78,32 @@ def writeFlowCountQuery(p4info_helper, switch, query_id, dst_ip_addr, dst_ip_mas
     
     switch.WriteTableEntry(table_entry)
 
+def readTableRules(p4info_helper, sw):
+    """
+    Reads the table entries from all tables on the switch.
+
+    :param p4info_helper: the P4Info helper
+    :param sw: the switch connection
+    """
+    print '\n----- Reading tables rules for %s -----' % sw.name
+    for response in sw.ReadTableEntries():
+        for entity in response.entities:
+            entry = entity.table_entry
+            # TODO For extra credit, you can use the p4info_helper to translate
+            #      the IDs in the entry to names
+            table_name = p4info_helper.get_tables_name(entry.table_id)
+            print '%s: ' % table_name,
+            for m in entry.match:
+                print p4info_helper.get_match_field_name(table_name, m.field_id),
+                print '%r' % (p4info_helper.get_match_field_value(m),),
+            action = entry.action.action
+            action_name = p4info_helper.get_actions_name(action.action_id)
+            print '->', action_name,
+            for p in action.params:
+                print p4info_helper.get_action_param_name(action_name, p.param_id),
+                print '%r' % p.value,
+            print
+
 def main(p4info_file_path, bmv2_file_path):
     # Instantiate a P4Runtime helper from the p4info file
     p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
@@ -337,8 +363,8 @@ def main(p4info_file_path, bmv2_file_path):
         writeAggregating(p4info_helper, switch=s7, dst_ip_addr="10.0.1.1")
 
         # TODO Uncomment the following two lines to read table entries from s1 and s2
-        # readTableRules(p4info_helper, s1)
-        # readTableRules(p4info_helper, s2)
+        readTableRules(p4info_helper, s5)
+        readTableRules(p4info_helper, s6)
 
         # Print the tunnel counters every 2 seconds
         while True:
