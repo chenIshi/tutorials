@@ -111,14 +111,14 @@ control MyIngress(inout headers hdr,
     register<bit<8>>(MAX_QUERY_ID) queryCounters;
     /* reg_count acted as buffer
         but behaves differently between monitors and aggregators */
-    bit<8> reg_count;
+    bit<8> reg_count = 0;
     /* ctrl_addr/ctrl_mac is temp buffer for monitor */
     ip4Addr_t ctrl_addr;
     bit<48> ctrl_mac;
     /* Both acked_monitor_number and last_seen_timestamp is for aggregator*/
-    bit <8> acked_monitor_number;
+    bit <8> acked_monitor_number = 0;
     /* last_seen_timestamp is used to detect retransmittion of controller */
-    bit<8> last_seen_timestamp;
+    bit<8> last_seen_timestamp = 0;
 
     action drop() {
         mark_to_drop(standard_metadata);
@@ -192,6 +192,7 @@ control MyIngress(inout headers hdr,
                 /* clean-up for another round of aggregation */
                 reg_count = 0;
                 acked_monitor_number = 0;
+		last_seen_timestamp = hdr.myControl.timestamp;
             }
             reg_count = reg_count + hdr.myControl.flowCount;
             acked_monitor_number = acked_monitor_number + 1;
@@ -199,6 +200,8 @@ control MyIngress(inout headers hdr,
             /* Aggregation Complete */
             if (acked_monitor_number >= hdr.myControl.monNum) {
                 hdr.myControl.flowCount = reg_count;
+		reg_count = 0;
+		acked_monitor_number = 0;
             } else {
                 mark_to_drop(standard_metadata);
             }
