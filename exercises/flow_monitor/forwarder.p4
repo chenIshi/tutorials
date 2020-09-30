@@ -119,6 +119,7 @@ control MyIngress(inout headers hdr,
     bit <8> acked_monitor_number = 0;
     /* last_seen_timestamp is used to detect retransmittion of controller */
     bit<8> last_seen_timestamp = 0;
+    bit<1> complete = 0;
 
     action drop() {
         mark_to_drop(standard_metadata);
@@ -172,6 +173,7 @@ control MyIngress(inout headers hdr,
         queryCounters.read(reg_count, (bit<32>)hdr.myControl.queryID);
         /* TODO: delete + 2 here (only for debugging)*/
         hdr.myControl.flowCount = reg_count + 2;
+        complete = 1;
 
         /* send back to controller */
         ctrl_addr = hdr.ipv4.srcAddr;
@@ -190,9 +192,10 @@ control MyIngress(inout headers hdr,
 
             if (last_seen_timestamp != hdr.myControl.timestamp) {
                 /* clean-up for another round of aggregation */
+                complete = 0;
                 reg_count = 0;
                 acked_monitor_number = 0;
-		last_seen_timestamp = hdr.myControl.timestamp;
+		        last_seen_timestamp = hdr.myControl.timestamp;
             }
             reg_count = reg_count + hdr.myControl.flowCount;
             acked_monitor_number = acked_monitor_number + 1;
@@ -200,10 +203,9 @@ control MyIngress(inout headers hdr,
             /* Aggregation Complete */
             if (acked_monitor_number >= hdr.myControl.monNum) {
                 hdr.myControl.flowCount = reg_count;
-		reg_count = 0;
-		acked_monitor_number = 0;
-            } else {
-                mark_to_drop(standard_metadata);
+		        reg_count = 0;
+		        acked_monitor_number = 0;
+                complete = 1;
             }
         }
     }
@@ -236,10 +238,12 @@ control MyIngress(inout headers hdr,
             // if it is a control plane packet
             if (hdr.myControl.isValid()) {
                 control_handler.apply();
+
+                if (complete == 0) {
+                    mark_to_drop(standard_metadata);
+                }
             }
         }
-
-        
     }
 }
 
