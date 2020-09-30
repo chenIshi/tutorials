@@ -48,9 +48,9 @@ def writeMonitoring(p4info_helper, switch, dst_ip_addr):
 
     switch.WriteTableEntry(table_entry)
 
-def writeAggregating(p4info_helper, switch, dst_ip_addr):
+def writeAggregating(p4info_helper, switch, dst_ip_addr, queryID):
     """
-    Aggregator should response once destination is its (virtual) IP
+    Aggregator should response once control packet whose destination is controller
     """
     table_entry = p4info_helper.buildTableEntry(
         table_name="MyIngress.control_handler",
@@ -58,7 +58,9 @@ def writeAggregating(p4info_helper, switch, dst_ip_addr):
             "hdr.ipv4.dstAddr": dst_ip_addr
         },
         action_name="MyIngress.ipv4_aggregation",
-        action_params= { })
+        action_params= {
+            "queryID": queryID,
+        })
 
     switch.WriteTableEntry(table_entry)
 
@@ -356,11 +358,11 @@ def main(p4info_file_path, bmv2_file_path):
         writeMonitoring(p4info_helper, switch=s6, dst_ip_addr="10.2.11.6")
 
         # Write inspected flow config to monitor switches
-        writeFlowCountQuery(p4info_helper, switch=s5, query_id=1, dst_ip_addr="10.0.1.0", dst_ip_mask=24)
-        writeFlowCountQuery(p4info_helper, switch=s6, query_id=1, dst_ip_addr="10.0.1.0", dst_ip_mask=24)
+        writeFlowCountQuery(p4info_helper, switch=s5, query_id=1, dst_ip_addr="10.1.1.0", dst_ip_mask=24)
+        writeFlowCountQuery(p4info_helper, switch=s6, query_id=1, dst_ip_addr="10.1.2.0", dst_ip_mask=24)
 
         # Write the aggregated flow config to aggr switches
-        writeAggregating(p4info_helper, switch=s7, dst_ip_addr="10.0.1.1")
+        writeAggregating(p4info_helper, switch=s7, dst_ip_addr="10.0.1.1", queryID=1)
 
         # TODO Uncomment the following two lines to read table entries from s1 and s2
         readTableRules(p4info_helper, s5)

@@ -37,8 +37,9 @@ header ipv4_t {
 
 header myControl_t {
     bit<16> queryID;
-    ip4Addr_t ipAddr;
-    bit<8> subnetMask;
+    /* Number of monitor in that query*/
+    bit<8> monNum;
+    bit<8> timestamp;
     bit<8> flowCount;
 }
 
@@ -108,13 +109,23 @@ control MyIngress(inout headers hdr,
 
     // p416 doesn't allow to read counter in data plane
     register<bit<8>>(MAX_QUERY_ID) queryCounters;
+    /* reg_count acted as buffer
+        but behaves differently between monitors and aggregators */
     bit<8> reg_count;
+    /* ctrl_addr/ctrl_mac is temp buffer for monitor */
+    ip4Addr_t ctrl_addr;
+    bit<48> ctrl_mac;
+    /* Both acked_monitor_number and last_seen_timestamp is for aggregator*/
+    bit <8> acked_monitor_number;
+    /* last_seen_timestamp is used to detect retransmittion of controller */
+    bit<8> last_seen_timestamp;
 
     action drop() {
         mark_to_drop(standard_metadata);
     }
     
     // record flow msg according to control plane config
+    /* No forward if destined for self*/
     action ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {
         standard_metadata.egress_spec = port;
         hdr.ethernet.srcAddr = hdr.ethernet.dstAddr;
@@ -159,12 +170,39 @@ control MyIngress(inout headers hdr,
 
     action ipv4_response() {
         queryCounters.read(reg_count, (bit<32>)hdr.myControl.queryID);
-        hdr.myControl.flowCount = reg_count;
+        /* TODO: delete + 2 here (only for debugging)*/
+        hdr.myControl.flowCount = reg_count + 2;
+
+        /* send back to controller */
+        ctrl_addr = hdr.ipv4.srcAddr;
+        hdr.ipv4.srcAddr = hdr.ipv4.dstAddr;
+        hdr.ipv4.dstAddr = ctrl_addr;
+
+        ctrl_mac = hdr.ethernet.srcAddr;
+        hdr.ethernet.srcAddr= hdr.ethernet.dstAddr;
+        hdr.ethernet.dstAddr= ctrl_mac;
+
+        standard_metadata.egress_spec=standard_metadata.ingress_port;
     }
 
-    action ipv4_aggregation() {
-        // TODO
-        // maybe it should also drop the routing packet
+    action ipv4_aggregation(bit<16> queryID) {
+        if (hdr.myControl.queryID == queryID) {
+
+            if (last_seen_timestamp != hdr.myControl.timestamp) {
+                /* clean-up for another round of aggregation */
+                reg_count = 0;
+                acked_monitor_number = 0;
+            }
+            reg_count = reg_count + hdr.myControl.flowCount;
+            acked_monitor_number = acked_monitor_number + 1;
+
+            /* Aggregation Complete */
+            if (acked_monitor_number >= hdr.myControl.monNum) {
+                hdr.myControl.flowCount = reg_count;
+            } else {
+                mark_to_drop(standard_metadata);
+            }
+        }
     }
 
     table control_handler {
