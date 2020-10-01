@@ -39,8 +39,8 @@ header myControl_t {
     bit<16> queryID;
     /* Number of monitor in that query*/
     bit<8> monNum;
-    bit<8> timestamp;
-    bit<8> flowCount;
+    bit<16> timestamp;
+    bit<16> flowCount;
 }
 
 struct metadata {
@@ -108,17 +108,17 @@ control MyIngress(inout headers hdr,
                   inout standard_metadata_t standard_metadata) {
 
     // p416 doesn't allow to read counter in data plane
-    register<bit<8>>(MAX_QUERY_ID) queryCounters;
+    register<bit<16>>(MAX_QUERY_ID) queryCounters;
     /* reg_count acted as buffer
         but behaves differently between monitors and aggregators */
-    bit<8> reg_count = 0;
+    bit<16> reg_count = 0;
     /* ctrl_addr/ctrl_mac is temp buffer for monitor */
     ip4Addr_t ctrl_addr;
     bit<48> ctrl_mac;
     /* Both acked_monitor_number and last_seen_timestamp is for aggregator*/
     bit <8> acked_monitor_number = 0;
     /* last_seen_timestamp is used to detect retransmittion of controller */
-    bit<8> last_seen_timestamp = 0;
+    bit<16> last_seen_timestamp = 0;
     bit<1> complete = 0;
 
     action drop() {
