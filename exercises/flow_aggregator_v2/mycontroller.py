@@ -213,10 +213,47 @@ def main(p4info_file_path, bmv2_file_path):
         writeL2Forwarding(p4info_helper, switch=s3, dst_ip_addr="10.0.3.3", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:03:33", dst_port=1)
         # Control plane
+        writeL2Forwarding(p4info_helper, switch=s1, dst_ip_addr="10.1.4.4", dst_ip_mask=32,
+                    dst_mac_addr="08:00:00:00:04:00", dst_port=2)
+        writeL2Forwarding(p4info_helper, switch=s1, dst_ip_addr="10.1.2.2", dst_ip_mask=32,
+                    dst_mac_addr="08:00:00:00:04:00", dst_port=2)
+        writeL2Forwarding(p4info_helper, switch=s1, dst_ip_addr="10.1.3.3", dst_ip_mask=32,
+                    dst_mac_addr="08:00:00:00:04:00", dst_port=2)
+
+        writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.1.1.1", dst_ip_mask=32,
+                    dst_mac_addr="08:00:00:00:01:00", dst_port=1)
+        writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.1.2.2", dst_ip_mask=32,
+                    dst_mac_addr="08:00:00:00:02:00", dst_port=2)
+        writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.1.3.3", dst_ip_mask=32,
+                    dst_mac_addr="08:00:00:00:03:00", dst_port=3)
+
+        writeL2Forwarding(p4info_helper, switch=s2, dst_ip_addr="10.1.1.1", dst_ip_mask=32,
+                    dst_mac_addr="08:00:00:00:04:00", dst_port=2)
+        writeL2Forwarding(p4info_helper, switch=s2, dst_ip_addr="10.1.4.4", dst_ip_mask=32,
+                    dst_mac_addr="08:00:00:00:04:00", dst_port=2)
+        writeL2Forwarding(p4info_helper, switch=s2, dst_ip_addr="10.1.3.3", dst_ip_mask=32,
+                    dst_mac_addr="08:00:00:00:04:00", dst_port=2)
+
+        writeL2Forwarding(p4info_helper, switch=s3, dst_ip_addr="10.1.1.1", dst_ip_mask=32,
+                    dst_mac_addr="08:00:00:00:04:00", dst_port=2)
+        writeL2Forwarding(p4info_helper, switch=s3, dst_ip_addr="10.1.4.4", dst_ip_mask=32,
+                    dst_mac_addr="08:00:00:00:04:00", dst_port=2)
+        writeL2Forwarding(p4info_helper, switch=s3, dst_ip_addr="10.1.2.2", dst_ip_mask=32,
+                    dst_mac_addr="08:00:00:00:04:00", dst_port=2)
+
+        # Flow aggr
+
+        writeMonitoring(p4info_helper, switch=s2, dst_ip_addr="10.1.2.2")
+        writeMonitoring(p4info_helper, switch=s3, dst_ip_addr="10.1.3.3")
+
+        writeFlowCountQuery(p4info_helper, switch=s2, query_id=1, dst_ip_addr="10.0.2.0", dst_ip_mask=24)
+        writeFlowCountQuery(p4info_helper, switch=s3, query_id=1, dst_ip_addr="10.0.3.0", dst_ip_mask=24)
+
+        writeAggregating(p4info_helper, switch=s4, dst_ip_addr="10.0.1.1", queryID=1)
 
         # TODO Uncomment the following two lines to read table entries from s1 and s2
-        readTableRules(p4info_helper, s1)
         readTableRules(p4info_helper, s2)
+        readTableRules(p4info_helper, s3)
 
         # Print the tunnel counters every 2 seconds
         while True:
