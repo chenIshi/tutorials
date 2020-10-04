@@ -123,6 +123,14 @@ control MyIngress(inout headers hdr,
     /* control_drop is a drop label for some control packet*/
     bit<1> control_drop = 0;
 
+    /*work-around for target (Conditional execution in actions is not supported)*/
+    /* aggr_query_id means there is no match, otherwise aggr is triggered*/
+    bit <16> aggr_query_id = 0;
+
+    bit <8> temp_monNum;
+    bit <16> temp_timestamp;
+    bit <16> temp_count;
+
     action drop() {
         mark_to_drop(standard_metadata);
     }
@@ -189,15 +197,18 @@ control MyIngress(inout headers hdr,
     }
 
     action ipv4_aggregation(bit<16> queryID) {
+        /*
         bit <8> temp_monNum;
         bit <16> temp_timestamp;
         bit <16> temp_count;
+        */
 
         /* if the aggregator is responsible for the query */
         if (hdr.myControl.queryID == queryID) {
+            aggr_query_id = queryID;
+            /*
             last_seen_timestamp.read(temp_timestamp, (bit<32>)queryID);
             if (temp_timestamp != hdr.myControl.timestamp) {
-                /* clean-up for another round of aggregation */
                 queryCounters.write((bit<32>)queryID, 0);
                 // reg_count = 0;
                 acked_monitor_number.write((bit<32>)queryID, 0);
@@ -212,7 +223,6 @@ control MyIngress(inout headers hdr,
             acked_monitor_number.write((bit<32>)queryID, temp_monNum+1);
             // acked_monitor_number = acked_monitor_number + 1;
 
-            /* Aggregation Complete */
             if (temp_monNum + 1 >= hdr.myControl.monNum) {
                 queryCounters.read(hdr.myControl.flowCount, (bit<32>)queryID);
                 // hdr.myControl.flowCount = reg_count;
@@ -223,6 +233,7 @@ control MyIngress(inout headers hdr,
             } else {
                 control_drop = 1;
             }
+            */
         }
     }
 
@@ -254,6 +265,31 @@ control MyIngress(inout headers hdr,
             // if it is a control plane packet
             if (hdr.myControl.isValid()) {
                 control_handler.apply();
+
+                // do aggregate
+                if (aggr_query_id > 0) {
+                    last_seen_timestamp.read(temp_timestamp, (bit<32>)aggr_query_id);
+                    if (temp_timestamp != hdr.myControl.timestamp) {
+                        queryCounters.write((bit<32>)aggr_query_id, 0);
+                        acked_monitor_number.write((bit<32>)aggr_query_id, 0);
+                        last_seen_timestamp.write((bit<32>)aggr_query_id, hdr.myControl.timestamp);
+                    }
+                    queryCounters.read(temp_count, (bit<32>)aggr_query_id);
+                    queryCounters.write((bit<32>)aggr_query_id, temp_count + hdr.myControl.flowCount);
+                    acked_monitor_number.read(temp_monNum, (bit<32>)aggr_query_id);
+                    acked_monitor_number.write((bit<32>)aggr_query_id, temp_monNum+1);
+
+                    if (temp_monNum + 1 >= hdr.myControl.monNum) {
+                        queryCounters.read(hdr.myControl.flowCount, (bit<32>)aggr_query_id);
+                        queryCounters.write((bit<32>)aggr_query_id, 0);
+                        acked_monitor_number.write((bit<32>)aggr_query_id, 0);
+                    } else {
+                        control_drop = 1;
+                    }
+                }
+
+                /* make sure it is initialized*/
+                aggr_query_id = 0;
 
                 if (control_drop == 1) {
                     mark_to_drop(standard_metadata);
