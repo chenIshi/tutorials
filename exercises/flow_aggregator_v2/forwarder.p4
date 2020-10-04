@@ -202,11 +202,11 @@ control MyIngress(inout headers hdr,
                 // reg_count = 0;
                 acked_monitor_number.write((bit<32>)queryID, 0);
                 // acked_monitor_number = 0;
-                last_seen_timestamp.write((bit<32>queryID), hdr.myControl.timestamp);
+                last_seen_timestamp.write((bit<32>)queryID, hdr.myControl.timestamp);
 		        // last_seen_timestamp = hdr.myControl.timestamp;
             }
             queryCounters.read(temp_count, (bit<32>)queryID);
-            queryCounters.write((bit<32>)queryID, temp_count + hdr.myControl.flowCount)
+            queryCounters.write((bit<32>)queryID, temp_count + hdr.myControl.flowCount);
             // reg_count = reg_count + hdr.myControl.flowCount;
             acked_monitor_number.read(temp_monNum, (bit<32>)queryID);
             acked_monitor_number.write((bit<32>)queryID, temp_monNum+1);
