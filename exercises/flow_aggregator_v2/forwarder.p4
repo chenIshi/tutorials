@@ -108,17 +108,18 @@ control MyIngress(inout headers hdr,
                   inout standard_metadata_t standard_metadata) {
 
     // p416 doesn't allow to read counter in data plane
+    // queryCounter store querycount in both monitor and aggregator
     register<bit<16>>(MAX_QUERY_ID) queryCounters;
+    /* Both acked_monitor_number and last_seen_timestamp is for aggregator*/
+    register <bit <8>> (MAX_QUERY_ID) acked_monitor_number;
+    /* last_seen_timestamp is used to detect retransmittion of controller */
+    register <bit<16>> (MAX_QUERY_ID) last_seen_timestamp;
     /* reg_count acted as buffer
         but behaves differently between monitors and aggregators */
     bit<16> reg_count = 0;
     /* ctrl_addr/ctrl_mac is temp buffer for monitor */
     ip4Addr_t ctrl_addr;
     bit<48> ctrl_mac;
-    /* Both acked_monitor_number and last_seen_timestamp is for aggregator*/
-    bit <8> acked_monitor_number = 0;
-    /* last_seen_timestamp is used to detect retransmittion of controller */
-    bit<16> last_seen_timestamp = 0;
     /* control_drop is a drop label for some control packet*/
     bit<1> control_drop = 0;
 
@@ -188,22 +189,37 @@ control MyIngress(inout headers hdr,
     }
 
     action ipv4_aggregation(bit<16> queryID) {
-        if (hdr.myControl.queryID == queryID) {
+        bit <8> temp_monNum;
+        bit <16> temp_timestamp;
+        bit <16> temp_count;
 
-            if (last_seen_timestamp != hdr.myControl.timestamp) {
+        /* if the aggregator is responsible for the query */
+        if (hdr.myControl.queryID == queryID) {
+            last_seen_timestamp.read(temp_timestamp, (bit<32>)queryID);
+            if (temp_timestamp != hdr.myControl.timestamp) {
                 /* clean-up for another round of aggregation */
-                reg_count = 0;
-                acked_monitor_number = 0;
-		        last_seen_timestamp = hdr.myControl.timestamp;
+                queryCounters.write((bit<32>)queryID, 0);
+                // reg_count = 0;
+                acked_monitor_number.write((bit<32>)queryID, 0);
+                // acked_monitor_number = 0;
+                last_seen_timestamp.write((bit<32>queryID), hdr.myControl.timestamp);
+		        // last_seen_timestamp = hdr.myControl.timestamp;
             }
-            reg_count = reg_count + hdr.myControl.flowCount;
-            acked_monitor_number = acked_monitor_number + 1;
+            queryCounters.read(temp_count, (bit<32>)queryID);
+            queryCounters.write((bit<32>)queryID, temp_count + hdr.myControl.flowCount)
+            // reg_count = reg_count + hdr.myControl.flowCount;
+            acked_monitor_number.read(temp_monNum, (bit<32>)queryID);
+            acked_monitor_number.write((bit<32>)queryID, temp_monNum+1);
+            // acked_monitor_number = acked_monitor_number + 1;
 
             /* Aggregation Complete */
-            if (acked_monitor_number >= hdr.myControl.monNum) {
-                hdr.myControl.flowCount = reg_count;
-		        reg_count = 0;
-		        acked_monitor_number = 0;
+            if (temp_monNum + 1 >= hdr.myControl.monNum) {
+                queryCounters.read(hdr.myControl.flowCount, (bit<32>)queryID);
+                // hdr.myControl.flowCount = reg_count;
+                queryCounters.write((bit<32>)queryID, 0);
+		        // reg_count = 0;
+                acked_monitor_number.write((bit<32>)queryID, 0);
+		        // acked_monitor_number = 0;
             } else {
                 control_drop = 1;
             }
