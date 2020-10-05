@@ -23,6 +23,8 @@ class Control_t(Packet):
     ]
 
 def collector(packet):
+    global FETCH_SUCCESS
+    print("Hello in collector")
     if IP in packet:
         if packet[IP].proto == CTRL_PROTO:
             # check if with corrrect timestamp
@@ -32,6 +34,8 @@ def collector(packet):
 
 # can improve with rev-aggr maybe
 def mpoll(destMAC, destIP, qid, timestamp):
+    global FETCH_SUCCESS
+
     FETCH_SUCCESS = False
     if len(destMAC) != len(destIP):
         return
@@ -44,11 +48,20 @@ def mpoll(destMAC, destIP, qid, timestamp):
         poll_pkt[Ether].dst = destMAC[mon_idx]
         poll_pkt[IP].dst = destIP[mon_idx]
 	# poll_pkt.show()
-        sendp(poll_pkt)
+	if mon_idx == (len(destIP) - 1):
+            reply = srp1(poll_pkt, timeout=POLLING_PERIOD)
+            if not (reply is None):
+                print("Get reply !")
+                FETCH_SUCCESS = True
+            else:
+                print("No reply !")
+	else:
+            sendp(poll_pkt)
+        # sendp(poll_pkt)
 
     # sniff for packets
-    sniff(iface="eth0", prn=collector, timeout=POLLING_PERIOD)
-
+    # sniff(prn=collector, timeout=POLLING_PERIOD)
+    # print("Hello after sniff")
 
 if __name__ == "__main__":
     # TODO: add a while loop here (escape condition required though)
@@ -59,8 +72,9 @@ if __name__ == "__main__":
     retrial_times = 0
     while (not FETCH_SUCCESS) and (retrial_times < POLL_RETRIAL_MAXNUM):
         Timestamp += 1
+	# Timestamp = 1
         retrial_times += 1
         mpoll(destMAC=["08:00:00:00:02:22", "08:00:00:00:03:33"], destIP=["10.1.2.2", "10.1.3.3"], qid=1, timestamp=Timestamp)
 
-    if retrial_times >= POLL_RETRIAL_MAXNUM:
+    if (not FETCH_SUCCESS) and (retrial_times >= POLL_RETRIAL_MAXNUM):
         print("Retransmittion failed after %d retrial" % (retrial_times))
