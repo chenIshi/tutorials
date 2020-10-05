@@ -7,6 +7,7 @@ POLLING_PERIOD = 0.05
 LOCAL_IPADDR = "10.0.1.1"
 CTRL_PROTO = 0x9F
 POLL_RETRIAL_MAXNUM = 10
+POLLING_NUMBER = 10
 
 FETCH_SUCCESS = False
 Timestamp = 0
@@ -65,16 +66,18 @@ def mpoll(destMAC, destIP, qid, timestamp):
 
 if __name__ == "__main__":
     # TODO: add a while loop here (escape condition required though)
+    for repoll in range(10):
+        # inactive phase
+        time.sleep(POLLING_PERIOD)
+        # active phase
+        retrial_times = 0
+        while (not FETCH_SUCCESS) and (retrial_times < POLL_RETRIAL_MAXNUM):
+            Timestamp += 1
+	    # Timestamp = 1
+            retrial_times += 1
+            mpoll(destMAC=["08:00:00:00:02:22", "08:00:00:00:03:33"], destIP=["10.1.2.2", "10.1.3.3"], qid=1, timestamp=Timestamp)
 
-    # inactive phase
-    time.sleep(POLLING_PERIOD)
-    # active phase
-    retrial_times = 0
-    while (not FETCH_SUCCESS) and (retrial_times < POLL_RETRIAL_MAXNUM):
-        Timestamp += 1
-	# Timestamp = 1
-        retrial_times += 1
-        mpoll(destMAC=["08:00:00:00:02:22", "08:00:00:00:03:33"], destIP=["10.1.2.2", "10.1.3.3"], qid=1, timestamp=Timestamp)
+        if (not FETCH_SUCCESS) and (retrial_times >= POLL_RETRIAL_MAXNUM):
+            print("Retransmittion failed after %d retrial" % (retrial_times))
 
-    if (not FETCH_SUCCESS) and (retrial_times >= POLL_RETRIAL_MAXNUM):
-        print("Retransmittion failed after %d retrial" % (retrial_times))
+        FETCH_SUCCESS = False
