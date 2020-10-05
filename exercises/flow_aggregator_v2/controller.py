@@ -52,7 +52,7 @@ def mpoll(destMAC, destIP, qid, timestamp):
             reply = srp1(poll_pkt, timeout=POLLING_PERIOD)
             if not (reply is None):
                 if IP in reply:
-                    if packet[IP].proto = CTRL_PROTO:
+                    if packet[IP].proto == CTRL_PROTO:
                         if bytes(packet[IP].payload)[3] == Timestamp:
                             FETCH_SUCCESS = True
                             print("Polled %d" % (bytes(packet[IP].payload)[4]))
