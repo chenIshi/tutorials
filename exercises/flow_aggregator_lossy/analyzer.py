@@ -44,23 +44,36 @@ def doStatistic(packet):
 
 
 
-if __name__ = "__main__":
+if __name__ == "__main__":
     for filename in os.listdir('pcaps/'):
         if filename.endswith(".pcap"):
-            InterfaceNames.append(filename[:-5])
+            # InterfaceNames.append(filename[:-5])
             
             packet_count = 0
             throughtput = 0
+                        
+            location = "pcaps/" + filename
+            # print(location)
+            file_has_content = True
 
-            sniff(offline=filename, prn=doStatistic, store=0)
+            try:
+                sniff(offline=location, prn=doStatistic, store=False)
+            except:
+                # print(location)
+                file_has_content = False
+                continue
 
-            PacketCounts.append(packet_count)
-            Throughtputs.append(throughtput)
+            if file_has_content:
+                InterfaceNames.append(filename[:-5])
+                PacketCounts.append(packet_count)
+                Throughtputs.append(throughtput)
 
-            dst = "logs/" + filename[:-5] +".json"
-            with open(dst, "w") as f:
-                json.dump(PPS, f)
+                dst = "logs/" + filename[:-5] +".json"
+                with open(dst, "w") as f:
+                    print(location)
+                    json.dump(PPS, f)
+                    PPS = []
+                    currentTime = 0
 
-            PPS = []
-
-        
+    for i in range(len(InterfaceNames)):
+        print("Interface ", InterfaceNames[i], ": pkt count = %d, throughtput = %d" % (PacketCounts[i], Throughtputs[i]))  
