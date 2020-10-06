@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 from scapy.all import *
 import time
+import struct
 
 # time period for trigger a poll event (ms)
 POLLING_PERIOD = 0.05
@@ -31,6 +32,8 @@ def collector(packet):
             if bytes(packet[IP].payload)[3] == Timestamp:
                 FETCH_SUCCESS = True
                 print("Polled %d" % (bytes(packet[IP].payload)[4]))
+            else:
+                print("Get Wrong timestamp %d not %d" % (bytes(packet[IP].payload)[4], Timestamp))
 
 # can improve with rev-aggr maybe
 def mpoll(destMAC, destIP, qid, timestamp):
@@ -52,10 +55,17 @@ def mpoll(destMAC, destIP, qid, timestamp):
             reply = srp1(poll_pkt, timeout=POLLING_PERIOD)
             if not (reply is None):
                 if IP in reply:
-                    if packet[IP].proto == CTRL_PROTO:
-                        if bytes(packet[IP].payload)[3] == Timestamp:
+                    if reply[IP].proto == CTRL_PROTO:
+                        fetched_timestamp = struct.unpack('>H', bytes(reply[IP].payload)[5:7])
+                        if fetched_timestamp[0] == Timestamp:
                             FETCH_SUCCESS = True
-                            print("Polled %d" % (bytes(packet[IP].payload)[4]))
+                            print("Polled %d" % (fetched_timestamp[0]))
+                        else:
+                            print("Get Wrong Timestamp %d instead of %d" % (fetched_timestamp[0], Timestamp))
+                    else:
+                        print("Not a control pkt")
+                else:
+                    print("Not a IP pkt")
 	else:
             sendp(poll_pkt)
         # sendp(poll_pkt)
