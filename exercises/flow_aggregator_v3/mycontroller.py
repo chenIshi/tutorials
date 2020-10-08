@@ -51,7 +51,7 @@ def writeMonResponse(p4info_helper, switch, dst_ip_addr):
     switch.WriteTableEntry(table_entry)
 
 def writeAggrDispatching(p4info_helper, switch, my_ip_addr, queryID, dst_ip_addr1, dst_ip_addr2):
-     """
+    """
     Unpack poll query from controller
     """
     table_entry1 = p4info_helper.buildTableEntry(
@@ -74,9 +74,8 @@ def writeAggrDispatching(p4info_helper, switch, my_ip_addr, queryID, dst_ip_addr
             "dstAddr1": dst_ip_addr1,
             "dstAddr2": dst_ip_addr2,
         })
-
-        switch.WriteTableEntry(table_entry1)
-        switch.WriteTableEntry(table_entry2)
+    switch.WriteTableEntry(table_entry1)
+    switch.WriteTableEntry(table_entry2)
 
 
 def writeAggregating(p4info_helper, switch, dst_ip_addr, queryID):
