@@ -7,6 +7,22 @@ const bit<8> TYPE_CONTROL = 0x9F;
 const bit<32> MAX_QUERY_ID = 1 << 16;
 const bit<16> LOSS_PER_COUNT = 50;
 
+const bit<32> I2E_CLONE_SESSION_ID = 5;
+
+const bit<32> BMV2_V1MODEL_INSTANCE_TYPE_NORMAL        = 0;
+const bit<32> BMV2_V1MODEL_INSTANCE_TYPE_INGRESS_CLONE = 1;
+const bit<32> BMV2_V1MODEL_INSTANCE_TYPE_EGRESS_CLONE  = 2;
+const bit<32> BMV2_V1MODEL_INSTANCE_TYPE_COALESCED     = 3;
+const bit<32> BMV2_V1MODEL_INSTANCE_TYPE_RECIRC        = 4;
+const bit<32> BMV2_V1MODEL_INSTANCE_TYPE_REPLICATION   = 5;
+const bit<32> BMV2_V1MODEL_INSTANCE_TYPE_RESUBMIT      = 6;
+
+#define IS_RESUBMITTED(std_meta) (std_meta.instance_type == BMV2_V1MODEL_INSTANCE_TYPE_RESUBMIT)
+#define IS_RECIRCULATED(std_meta) (std_meta.instance_type == BMV2_V1MODEL_INSTANCE_TYPE_RECIRC)
+#define IS_I2E_CLONE(std_meta) (std_meta.instance_type == BMV2_V1MODEL_INSTANCE_TYPE_INGRESS_CLONE)
+#define IS_E2E_CLONE(std_meta) (std_meta.instance_type == BMV2_V1MODEL_INSTANCE_TYPE_EGRESS_CLONE)
+#define IS_REPLICATED(std_meta) (std_meta.instance_type == BMV2_V1MODEL_INSTANCE_TYPE_REPLICATION)
+
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
 *************************************************************************/
@@ -232,22 +248,6 @@ control MyIngress(inout headers hdr,
         default_action = NoAction();
     }
 
-    action doUnpack(ip4Addr_t dstAddr1, ip4Addr_t dstAddr2) {
-        /* Clone the polling packet to both addresses */ 
-    }
-
-    table aggr_unpack {
-        key = {
-            hdr.myControl.queryID: exact;
-        }
-        actions = {
-            NoAction;
-            doUnpack;
-        }
-        size = 512;
-        default_action = NoAction();
-    }
-
     // ---- main ----
 
     apply {
@@ -276,7 +276,8 @@ control MyIngress(inout headers hdr,
                     if (isAskingForResponse > 0) {
                         // this is a aggregator
                         if (isAskingForResponse == 1) {
-                            aggr_unpack.apply();
+                            clone3(CloneType.I2E, I2E_CLONE_SESSION_ID, standard_metadata);
+                            clone3(CloneType.I2E, I2E_CLONE_SESSION_ID, standard_metadata);
                         // this is a monitor
                         } else if (isAskingForResponse == 2) {
                             queryCounters.read(reg_count, (bit<32>)hdr.myControl.queryID);
@@ -339,7 +340,29 @@ control MyIngress(inout headers hdr,
 control MyEgress(inout headers hdr,
                  inout metadata meta,
                  inout standard_metadata_t standard_metadata) {
-    apply {  }
+
+    action doUnpack(ip4Addr_t monitorAddr) {
+        /* forward the generated packet with right IP addr*/
+        hdr.ipv4.dstAddr = monitorAddr;
+    }
+
+    table aggr_unpack {
+        key = {
+            standard_metadata.egress_port: exact;
+        }
+        actions = {
+            NoAction;
+            doUnpack;
+        }
+        size = 512;
+        default_action = NoAction();
+    }
+    
+    apply { 
+        if (IS_I2E_CLONE(standard_metadata)) {
+            aggr_unpack.apply();
+        }
+    }
 }
 
 /*************************************************************************

@@ -50,7 +50,7 @@ def writeMonResponse(p4info_helper, switch, dst_ip_addr):
 
     switch.WriteTableEntry(table_entry)
 
-def writeAggrDispatching(p4info_helper, switch, my_ip_addr, queryID, dst_ip_addr1, dst_ip_addr2):
+def writeAggrDispatching(p4info_helper, switch, my_ip_addr, queryID, cloneId, dst_ip_addr1, dst_ip_addr2, dport1, dport2):
     """
     Unpack poll query from controller
     """
@@ -65,17 +65,43 @@ def writeAggrDispatching(p4info_helper, switch, my_ip_addr, queryID, dst_ip_addr
         })
 
     table_entry2 = p4info_helper.buildTableEntry(
-        table_name="MyIngress.aggr_unpack",
+        table_name="MyEgress.aggr_unpack",
         match_fields={
-            "hdr.myControl.queryID": queryID
+            "standard_metadata.egress_port": dport1
         },
-        action_name="MyIngress.aggr_unpack",
+        action_name="MyEgress.aggr_unpack",
         action_params= {
-            "dstAddr1": dst_ip_addr1,
-            "dstAddr2": dst_ip_addr2,
+            "monitorAddr": dst_ip_addr1,
         })
+
+    table_entry3 = p4info_helper.buildTableEntry(
+        table_name="MyEgress.aggr_unpack",
+        match_fields={
+            "standard_metadata.egress_port": dport2
+        },
+        action_name="MyEgress.aggr_unpack",
+        action_params= {
+            "monitorAddr": dst_ip_addr2,
+        })
+
+    rep = list()
+    rep.append({
+        "egress_port": dport1,
+        "instance": 1,
+    })
+    rep.append({
+        "egress_port": dport2,
+        "instance": 1,
+    })
+    clone_entry1 = p4info_helper.buildCloneSessionEntry(
+        clone_session_id=cloneId,
+        replicas=rep,
+        packet_length_bytes=41,
+    )
     switch.WriteTableEntry(table_entry1)
     switch.WriteTableEntry(table_entry2)
+    switch.WriteTableEntry(table_entry3)
+    switch.WritePREEntry(clone_entry1)
 
 
 def writeAggregating(p4info_helper, switch, dst_ip_addr, queryID):
@@ -279,6 +305,7 @@ def main(p4info_file_path, bmv2_file_path):
         writeFlowCountQuery(p4info_helper, switch=s2, query_id=1, dst_ip_addr="10.0.2.0", dst_ip_mask=24)
         writeFlowCountQuery(p4info_helper, switch=s3, query_id=1, dst_ip_addr="10.0.3.0", dst_ip_mask=24)
 
+        writeAggrDispatching(p4info_helper, switch=s4, my_ip_addr="10.1.4.4", queryID=1, cloneId=5, dst_ip_addr1="10.1.2.2", dst_ip_addr2="10.1.3.3", dport1=2, dport2=3)
         writeAggregating(p4info_helper, switch=s4, dst_ip_addr="10.0.1.1", queryID=1)
 
         # TODO Uncomment the following two lines to read table entries from s1 and s2

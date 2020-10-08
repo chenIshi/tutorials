@@ -8,7 +8,7 @@ POLLING_PERIOD = 0.05
 LOCAL_IPADDR = "10.0.1.1"
 CTRL_PROTO = 0x9F
 POLL_RETRIAL_MAXNUM = 6
-POLLING_NUMBER = 100
+POLLING_NUMBER = 5
 
 FETCH_SUCCESS = False
 Timestamp = 0
@@ -40,7 +40,7 @@ def mpoll(destMAC, destIP, qid, timestamp):
     for mon_idx in range(len(destIP)):
         poll_pkt[Ether].dst = destMAC[mon_idx]
         poll_pkt[IP].dst = destIP[mon_idx]
-	if mon_idx == (len(destIP) - 1):
+	    if mon_idx == (len(destIP) - 1):
             reply = srp1(poll_pkt, timeout=POLLING_PERIOD)
             if not (reply is None):
                 if IP in reply:
@@ -55,7 +55,7 @@ def mpoll(destMAC, destIP, qid, timestamp):
                         print("Not a control pkt")
                 else:
                     print("Not a IP pkt")
-	else:
+	    else:
             sendp(poll_pkt)
 
 if __name__ == "__main__":
@@ -67,9 +67,8 @@ if __name__ == "__main__":
         retrial_times = 0
         while (not FETCH_SUCCESS) and (retrial_times < POLL_RETRIAL_MAXNUM):
             Timestamp += 1
-        # Timestamp = 1
             retrial_times += 1
-            mpoll(destMAC=["08:00:00:00:02:22", "08:00:00:00:03:33"], destIP=["10.1.2.2", "10.1.3.3"], qid=1, timestamp=Timestamp)
+            mpoll(destMAC=["08:00:00:00:04:44"], destIP=["10.1.4.4"], qid=1, timestamp=Timestamp)
 
         if (not FETCH_SUCCESS) and (retrial_times >= POLL_RETRIAL_MAXNUM):
             print("Retransmittion failed in time %d" % (repoll))
