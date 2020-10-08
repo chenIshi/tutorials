@@ -5,6 +5,7 @@
 const bit<16> TYPE_IPV4 = 0x800;
 const bit<8> TYPE_CONTROL = 0x9F;
 const bit<32> MAX_QUERY_ID = 1 << 16;
+const bit<16> LOSS_PER_COUNT = 50;
 
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
@@ -114,6 +115,9 @@ control MyIngress(inout headers hdr,
     register <bit <8>> (MAX_QUERY_ID) acked_monitor_number;
     /* last_seen_timestamp is used to detect retransmittion of controller */
     register <bit<16>> (MAX_QUERY_ID) last_seen_timestamp;
+
+    register <bit<16>> (1) loss_counter;
+
     /* reg_count acted as buffer
         but behaves differently between monitors and aggregators */
     bit<16> reg_count = 0;
@@ -247,73 +251,84 @@ control MyIngress(inout headers hdr,
     // ---- main ----
 
     apply {
-        if (hdr.ipv4.isValid()) {
-            // decide its ip route first
-            // however, not modified only if destination is itself
-            ipv4_lpm.apply();
+        bit<16> temp_loss_count;
+        loss_counter.read(temp_loss_count, 0);
+        loss_counter.write(0, temp_loss_count + 1);
 
-            // count passed flow if query is assigned
-            ipv4_count.apply();
+        if (temp_loss_count > LOSS_PER_COUNT) {
+            mark_to_drop(standard_metadata);
+            loss_counter.write(0, 0);
+        } else {
+            if (hdr.ipv4.isValid()) {
+                // decide its ip route first
+                // however, not modified only if destination is itself
+                ipv4_lpm.apply();
 
-            // if it is a control plane packet
-            if (hdr.myControl.isValid()) {
-                // acted a preconfig to see what to do next, response or aggregate or nothing
-                control_handler.apply();
+                // count passed flow if query is assigned
+                ipv4_count.apply();
 
-                // do response
-                if (isAskingForResponse > 0) {
-                    // this is a aggregator
-                    if (isAskingForResponse == 1) {
-                        aggr_unpack.apply();
-                    // this is a monitor
-                    } else if (isAskingForResponse == 2) {
-                        queryCounters.read(reg_count, (bit<32>)hdr.myControl.queryID);
-                        /* TODO: delete + 2 here (only for debugging)*/
-                        hdr.myControl.flowCount = reg_count + 2;
+                // if it is a control plane packet
+                if (hdr.myControl.isValid()) {
+                    // acted a preconfig to see what to do next, response or aggregate or nothing
+                    control_handler.apply();
 
-                        /* send back to controller */
-                        ctrl_addr = hdr.ipv4.srcAddr;
-                        hdr.ipv4.srcAddr = hdr.ipv4.dstAddr;
-                        hdr.ipv4.dstAddr = ctrl_addr;
+                    // do response
+                    if (isAskingForResponse > 0) {
+                        // this is a aggregator
+                        if (isAskingForResponse == 1) {
+                            aggr_unpack.apply();
+                        // this is a monitor
+                        } else if (isAskingForResponse == 2) {
+                            queryCounters.read(reg_count, (bit<32>)hdr.myControl.queryID);
+                            /* TODO: delete + 2 here (only for debugging)*/
+                            hdr.myControl.flowCount = reg_count + 2;
 
-                        ctrl_mac = hdr.ethernet.srcAddr;
-                        hdr.ethernet.srcAddr= hdr.ethernet.dstAddr;
-                        hdr.ethernet.dstAddr= ctrl_mac;
+                            /* send back to controller */
+                            ctrl_addr = hdr.ipv4.srcAddr;
+                            hdr.ipv4.srcAddr = hdr.ipv4.dstAddr;
+                            hdr.ipv4.dstAddr = ctrl_addr;
 
-                        standard_metadata.egress_spec=standard_metadata.ingress_port;
+                            ctrl_mac = hdr.ethernet.srcAddr;
+                            hdr.ethernet.srcAddr= hdr.ethernet.dstAddr;
+                            hdr.ethernet.dstAddr= ctrl_mac;
+
+                            standard_metadata.egress_spec=standard_metadata.ingress_port;
+                        }
                     }
-                }
-                // do aggregate
-                if (aggr_query_id > 0) {
-                    last_seen_timestamp.read(temp_timestamp, (bit<32>)aggr_query_id);
-                    if (temp_timestamp != hdr.myControl.timestamp) {
-                        queryCounters.write((bit<32>)aggr_query_id, 0);
-                        acked_monitor_number.write((bit<32>)aggr_query_id, 0);
-                        last_seen_timestamp.write((bit<32>)aggr_query_id, hdr.myControl.timestamp);
+                    // do aggregate
+                    if (aggr_query_id > 0) {
+                        last_seen_timestamp.read(temp_timestamp, (bit<32>)aggr_query_id);
+                        if (temp_timestamp != hdr.myControl.timestamp) {
+                            queryCounters.write((bit<32>)aggr_query_id, 0);
+                            acked_monitor_number.write((bit<32>)aggr_query_id, 0);
+                            last_seen_timestamp.write((bit<32>)aggr_query_id, hdr.myControl.timestamp);
+                        }
+                        queryCounters.read(temp_count, (bit<32>)aggr_query_id);
+                        queryCounters.write((bit<32>)aggr_query_id, temp_count + hdr.myControl.flowCount);
+                        acked_monitor_number.read(temp_monNum, (bit<32>)aggr_query_id);
+                        acked_monitor_number.write((bit<32>)aggr_query_id, temp_monNum+1);
+
+                        if (temp_monNum + 1 >= hdr.myControl.monNum) {
+                            queryCounters.read(hdr.myControl.flowCount, (bit<32>)aggr_query_id);
+                            queryCounters.write((bit<32>)aggr_query_id, 0);
+                            acked_monitor_number.write((bit<32>)aggr_query_id, 0);
+                        } else {
+                            control_drop = 1;
+                        }
                     }
-                    queryCounters.read(temp_count, (bit<32>)aggr_query_id);
-                    queryCounters.write((bit<32>)aggr_query_id, temp_count + hdr.myControl.flowCount);
-                    acked_monitor_number.read(temp_monNum, (bit<32>)aggr_query_id);
-                    acked_monitor_number.write((bit<32>)aggr_query_id, temp_monNum+1);
 
-                    if (temp_monNum + 1 >= hdr.myControl.monNum) {
-                        queryCounters.read(hdr.myControl.flowCount, (bit<32>)aggr_query_id);
-                        queryCounters.write((bit<32>)aggr_query_id, 0);
-                        acked_monitor_number.write((bit<32>)aggr_query_id, 0);
-                    } else {
-                        control_drop = 1;
+                    /* make sure it is initialized*/
+                    aggr_query_id = 0;
+
+                    if (control_drop == 1) {
+                        mark_to_drop(standard_metadata);
+                        control_drop = 0;
                     }
-                }
-
-                /* make sure it is initialized*/
-                aggr_query_id = 0;
-
-                if (control_drop == 1) {
-                    mark_to_drop(standard_metadata);
-                    control_drop = 0;
                 }
             }
         }
+
+        
     }
 }
 

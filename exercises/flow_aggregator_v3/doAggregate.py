@@ -7,7 +7,8 @@ import struct
 POLLING_PERIOD = 0.05
 LOCAL_IPADDR = "10.0.1.1"
 CTRL_PROTO = 0x9F
-POLL_RETRIAL_MAXNUM = 10
+POLL_RETRIAL_MAXNUM = 6
+POLLING_NUMBER = 100
 
 FETCH_SUCCESS = False
 Timestamp = 0
@@ -26,6 +27,7 @@ class Control_t(Packet):
 # can improve with rev-aggr maybe
 def mpoll(destMAC, destIP, qid, timestamp):
     global FETCH_SUCCESS
+    global Timestamp
 
     FETCH_SUCCESS = False
     if len(destMAC) != len(destIP):
@@ -38,7 +40,6 @@ def mpoll(destMAC, destIP, qid, timestamp):
     for mon_idx in range(len(destIP)):
         poll_pkt[Ether].dst = destMAC[mon_idx]
         poll_pkt[IP].dst = destIP[mon_idx]
-	# poll_pkt.show()
 	if mon_idx == (len(destIP) - 1):
             reply = srp1(poll_pkt, timeout=POLLING_PERIOD)
             if not (reply is None):
@@ -47,7 +48,7 @@ def mpoll(destMAC, destIP, qid, timestamp):
                         fetched_timestamp = struct.unpack('>H', bytes(reply[IP].payload)[5:7])
                         if fetched_timestamp[0] == Timestamp:
                             FETCH_SUCCESS = True
-                            print("Polled %d" % (fetched_timestamp[0]))
+                            # print("Polled %d" % (fetched_timestamp[0]))
                         else:
                             print("Get Wrong Timestamp %d instead of %d" % (fetched_timestamp[0], Timestamp))
                     else:
@@ -59,16 +60,19 @@ def mpoll(destMAC, destIP, qid, timestamp):
 
 if __name__ == "__main__":
     # TODO: add a while loop here (escape condition required though)
+    for repoll in range(POLLING_NUMBER):
+        # inactive phase
+        time.sleep(POLLING_PERIOD)
+        # active phase
+        retrial_times = 0
+        while (not FETCH_SUCCESS) and (retrial_times < POLL_RETRIAL_MAXNUM):
+            Timestamp += 1
+        # Timestamp = 1
+            retrial_times += 1
+            mpoll(destMAC=["08:00:00:00:02:22", "08:00:00:00:03:33"], destIP=["10.1.2.2", "10.1.3.3"], qid=1, timestamp=Timestamp)
 
-    # inactive phase
-    time.sleep(POLLING_PERIOD)
-    # active phase
-    retrial_times = 0
-    while (not FETCH_SUCCESS) and (retrial_times < POLL_RETRIAL_MAXNUM):
-        Timestamp += 1
-	# Timestamp = 1
-        retrial_times += 1
-        mpoll(destMAC=["08:00:00:00:02:22", "08:00:00:00:03:33"], destIP=["10.1.2.2", "10.1.3.3"], qid=1, timestamp=Timestamp)
+        if (not FETCH_SUCCESS) and (retrial_times >= POLL_RETRIAL_MAXNUM):
+            print("Retransmittion failed in time %d" % (repoll))
+            break
 
-    if (not FETCH_SUCCESS) and (retrial_times >= POLL_RETRIAL_MAXNUM):
-        print("Retransmittion failed after %d retrial" % (retrial_times))
+        FETCH_SUCCESS = False

@@ -41,7 +41,7 @@ def mpoll(destMAC, destIP, qid, timestamp):
         poll_pkt[Ether].dst = destMAC[mon_idx]
         poll_pkt[IP].dst = destIP[mon_idx]
 	if mon_idx == (len(destIP) - 1):
-            reply = srp1(poll_pkt, timeout=POLLING_PERIOD)
+            reply = srp1(poll_pkt, timeout=POLLING_PERIOD, verbose=0)
             if not (reply is None):
                 if IP in reply:
                     if reply[IP].proto == CTRL_PROTO:
