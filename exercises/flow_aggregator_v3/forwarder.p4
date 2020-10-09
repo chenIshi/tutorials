@@ -276,8 +276,7 @@ control MyIngress(inout headers hdr,
                     if (isAskingForResponse > 0) {
                         // this is a aggregator
                         if (isAskingForResponse == 1) {
-                            clone3(CloneType.I2E, I2E_CLONE_SESSION_ID, standard_metadata);
-                            clone3(CloneType.I2E, I2E_CLONE_SESSION_ID, standard_metadata);
+                            standard_metadata.mcast_grp = 1;
                         // this is a monitor
                         } else if (isAskingForResponse == 2) {
                             queryCounters.read(reg_count, (bit<32>)hdr.myControl.queryID);
@@ -341,6 +340,10 @@ control MyEgress(inout headers hdr,
                  inout metadata meta,
                  inout standard_metadata_t standard_metadata) {
 
+    action drop() {
+        mark_to_drop(standard_metadata);
+    }
+
     action doUnpack(ip4Addr_t monitorAddr) {
         /* forward the generated packet with right IP addr*/
         hdr.ipv4.dstAddr = monitorAddr;
@@ -359,7 +362,10 @@ control MyEgress(inout headers hdr,
     }
     
     apply { 
-        if (IS_I2E_CLONE(standard_metadata)) {
+        if (standard_metadata.egress_port == standard_metadata.ingress_port) {
+            drop();
+        }
+        if (IS_REPLICATED(standard_metadata)) {
             aggr_unpack.apply();
         }
     }

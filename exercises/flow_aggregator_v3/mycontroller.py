@@ -84,24 +84,9 @@ def writeAggrDispatching(p4info_helper, switch, my_ip_addr, queryID, cloneId, ds
             "monitorAddr": dst_ip_addr2,
         })
 
-    rep = list()
-    rep.append({
-        "egress_port": dport1,
-        "instance": 1,
-    })
-    rep.append({
-        "egress_port": dport2,
-        "instance": 1,
-    })
-    clone_entry1 = p4info_helper.buildCloneSessionEntry(
-        clone_session_id=cloneId,
-        replicas=rep,
-        packet_length_bytes=41,
-    )
     switch.WriteTableEntry(table_entry1)
     switch.WriteTableEntry(table_entry2)
     switch.WriteTableEntry(table_entry3)
-    switch.WritePREEntry(clone_entry1)
 
 
 def writeAggregating(p4info_helper, switch, dst_ip_addr, queryID):
