@@ -198,18 +198,18 @@ def main(p4info_file_path, bmv2_file_path):
             address='127.0.0.1:50053',
             device_id=2,
             proto_dump_file='logs/s3-p4runtime-requests.txt')
-        s4 = p4runtime_lib.bmv2.Bmv2SwitchConnection(
-            name='s4',
-            address='127.0.0.1:50054',
-            device_id=3,
-            proto_dump_file='logs/s4-p4runtime-requests.txt')
+        # s4 = p4runtime_lib.bmv2.Bmv2SwitchConnection(
+        #     name='s4',
+        #     address='127.0.0.1:50054',
+        #     device_id=3,
+        #     proto_dump_file='logs/s4-p4runtime-requests.txt')
 
         # Send master arbitration update message to establish this controller as
         # master (required by P4Runtime before performing any other write operation)
         s1.MasterArbitrationUpdate()
         s2.MasterArbitrationUpdate()
         s3.MasterArbitrationUpdate()
-        s4.MasterArbitrationUpdate()
+        # s4.MasterArbitrationUpdate()
 
         # Install the P4 program on the switches
         s1.SetForwardingPipelineConfig(p4info=p4info_helper.p4info,
@@ -221,9 +221,9 @@ def main(p4info_file_path, bmv2_file_path):
         s3.SetForwardingPipelineConfig(p4info=p4info_helper.p4info,
                                        bmv2_json_file_path=bmv2_file_path)
         print "Installed P4 Program using SetForwardingPipelineConfig on s3"
-        s4.SetForwardingPipelineConfig(p4info=p4info_helper.p4info,
-                                       bmv2_json_file_path=bmv2_file_path)
-        print "Installed P4 Program using SetForwardingPipelineConfig on s4"
+        # s4.SetForwardingPipelineConfig(p4info=p4info_helper.p4info,
+        #                               bmv2_json_file_path=bmv2_file_path)
+        # print "Installed P4 Program using SetForwardingPipelineConfig on s4"
 
         # Data plane
         writeL2Forwarding(p4info_helper, switch=s1, dst_ip_addr="10.0.1.1", dst_ip_mask=32,
@@ -233,11 +233,11 @@ def main(p4info_file_path, bmv2_file_path):
         writeL2Forwarding(p4info_helper, switch=s1, dst_ip_addr="10.0.3.3", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:04:00", dst_port=2)
 
-        writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.0.1.1", dst_ip_mask=32,
+        # writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.0.1.1", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:01:00", dst_port=1)
-        writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.0.2.2", dst_ip_mask=32,
+        # writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.0.2.2", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:02:00", dst_port=2)
-        writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.0.3.3", dst_ip_mask=32,
+        # writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.0.3.3", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:03:00", dst_port=3)
 
         writeL2Forwarding(p4info_helper, switch=s2, dst_ip_addr="10.0.1.1", dst_ip_mask=32,
@@ -261,11 +261,11 @@ def main(p4info_file_path, bmv2_file_path):
         writeL2Forwarding(p4info_helper, switch=s1, dst_ip_addr="10.1.3.3", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:04:00", dst_port=2)
 
-        writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.1.1.1", dst_ip_mask=32,
+        # writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.1.1.1", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:01:00", dst_port=1)
-        writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.1.2.2", dst_ip_mask=32,
+        # writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.1.2.2", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:02:00", dst_port=2)
-        writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.1.3.3", dst_ip_mask=32,
+        # writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.1.3.3", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:03:00", dst_port=3)
 
         writeL2Forwarding(p4info_helper, switch=s2, dst_ip_addr="10.1.1.1", dst_ip_mask=32,
@@ -290,8 +290,8 @@ def main(p4info_file_path, bmv2_file_path):
         writeFlowCountQuery(p4info_helper, switch=s2, query_id=1, dst_ip_addr="10.0.2.0", dst_ip_mask=24)
         writeFlowCountQuery(p4info_helper, switch=s3, query_id=1, dst_ip_addr="10.0.3.0", dst_ip_mask=24)
 
-        writeAggrDispatching(p4info_helper, switch=s4, my_ip_addr="10.1.4.4", queryID=1, cloneId=5, dst_ip_addr1="10.1.2.2", dst_ip_addr2="10.1.3.3", dport1=2, dport2=3)
-        writeAggregating(p4info_helper, switch=s4, dst_ip_addr="10.0.1.1", queryID=1)
+        # writeAggrDispatching(p4info_helper, switch=s4, my_ip_addr="10.1.4.4", queryID=1, cloneId=5, dst_ip_addr1="10.1.2.2", dst_ip_addr2="10.1.3.3", dport1=2, dport2=3)
+        # writeAggregating(p4info_helper, switch=s4, dst_ip_addr="10.0.1.1", queryID=1)
 
         # TODO Uncomment the following two lines to read table entries from s1 and s2
         readTableRules(p4info_helper, s2)
