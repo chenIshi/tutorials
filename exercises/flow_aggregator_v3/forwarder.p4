@@ -276,7 +276,8 @@ control MyIngress(inout headers hdr,
                     if (isAskingForResponse > 0) {
                         // this is a aggregator
                         if (isAskingForResponse == 1) {
-                            standard_metadata.mcast_grp = 1;
+                            clone3(CloneType.I2E, I2E_CLONE_SESSION_ID, standard_metadata);
+                            clone3(CloneType.I2E, I2E_CLONE_SESSION_ID, standard_metadata);
                         // this is a monitor
                         } else if (isAskingForResponse == 2) {
                             queryCounters.read(reg_count, (bit<32>)hdr.myControl.queryID);
@@ -365,7 +366,7 @@ control MyEgress(inout headers hdr,
         if (standard_metadata.egress_port == standard_metadata.ingress_port) {
             drop();
         }
-        if (IS_REPLICATED(standard_metadata)) {
+        if (IS_I2E_CLONE(standard_metadata)) {
             aggr_unpack.apply();
         }
     }
