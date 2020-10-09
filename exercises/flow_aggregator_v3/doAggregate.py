@@ -40,7 +40,7 @@ def mpoll(destMAC, destIP, qid, timestamp):
     for mon_idx in range(len(destIP)):
         poll_pkt[Ether].dst = destMAC[mon_idx]
         poll_pkt[IP].dst = destIP[mon_idx]
-	    if mon_idx == (len(destIP) - 1):
+	if mon_idx == (len(destIP) - 1):
             reply = srp1(poll_pkt, timeout=POLLING_PERIOD)
             if not (reply is None):
                 if IP in reply:
@@ -55,7 +55,7 @@ def mpoll(destMAC, destIP, qid, timestamp):
                         print("Not a control pkt")
                 else:
                     print("Not a IP pkt")
-	    else:
+	else:
             sendp(poll_pkt)
 
 if __name__ == "__main__":

@@ -69,7 +69,7 @@ def writeAggrDispatching(p4info_helper, switch, my_ip_addr, queryID, cloneId, ds
         match_fields={
             "standard_metadata.egress_port": dport1
         },
-        action_name="MyEgress.aggr_unpack",
+        action_name="MyEgress.doUnpack",
         action_params= {
             "monitorAddr": dst_ip_addr1,
         })
@@ -79,7 +79,7 @@ def writeAggrDispatching(p4info_helper, switch, my_ip_addr, queryID, cloneId, ds
         match_fields={
             "standard_metadata.egress_port": dport2
         },
-        action_name="MyEgress.aggr_unpack",
+        action_name="MyEgress.doUnpack",
         action_params= {
             "monitorAddr": dst_ip_addr2,
         })
