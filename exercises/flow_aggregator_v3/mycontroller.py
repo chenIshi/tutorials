@@ -50,7 +50,7 @@ def writeMonResponse(p4info_helper, switch, dst_ip_addr):
 
     switch.WriteTableEntry(table_entry)
 
-def writeAggrDispatching(p4info_helper, switch, my_ip_addr, queryID, cloneId, dst_ip_addr1, dst_ip_addr2, dport1, dport2):
+def writeAggrDispatching(p4info_helper, switch, my_ip_addr, queryID, mId, dst_ip_addr1, dst_ip_addr2, dport1, dport2):
     """
     Unpack poll query from controller
     """
@@ -84,9 +84,24 @@ def writeAggrDispatching(p4info_helper, switch, my_ip_addr, queryID, cloneId, ds
             "monitorAddr": dst_ip_addr2,
         })
 
+    mcast_entry1 = p4info_helper.buildMulticastGroupEntry(
+        multicast_group_id=mId,
+        replicas=[
+            {
+            "egress_port" : dport1,
+            "instance" : 1
+            },
+            {
+            "egress_port" : dport2,
+            "instance" : 1
+            }
+        ]
+    )
+
     switch.WriteTableEntry(table_entry1)
     switch.WriteTableEntry(table_entry2)
     switch.WriteTableEntry(table_entry3)
+    switch.WritePREEntry(mcast_entry1)
 
 
 def writeAggregating(p4info_helper, switch, dst_ip_addr, queryID):
@@ -290,7 +305,7 @@ def main(p4info_file_path, bmv2_file_path):
         writeFlowCountQuery(p4info_helper, switch=s2, query_id=1, dst_ip_addr="10.0.2.0", dst_ip_mask=24)
         writeFlowCountQuery(p4info_helper, switch=s3, query_id=1, dst_ip_addr="10.0.3.0", dst_ip_mask=24)
 
-        writeAggrDispatching(p4info_helper, switch=s4, my_ip_addr="10.1.4.4", queryID=1, cloneId=5, dst_ip_addr1="10.1.2.2", dst_ip_addr2="10.1.3.3", dport1=2, dport2=3)
+        writeAggrDispatching(p4info_helper, switch=s4, my_ip_addr="10.1.4.4", queryID=1, mId=1, dst_ip_addr1="10.1.2.2", dst_ip_addr2="10.1.3.3", dport1=2, dport2=3)
         writeAggregating(p4info_helper, switch=s4, dst_ip_addr="10.0.1.1", queryID=1)
 
         # TODO Uncomment the following two lines to read table entries from s1 and s2
