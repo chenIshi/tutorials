@@ -80,21 +80,21 @@
             }
           },
           {
-            "table": "MyIngress.aggr_unpack",
+            "table": "MyEgress.aggr_unpack",
             "match": {
               "standard_metadata.egress_port": 2
             },
-            "action_name": "MyIngress.doUnpack",
+            "action_name": "MyEgress.doUnpack",
             "action_params": {
               "monitorAddr": "10.1.2.2"
             }
           },
           {
-            "table": "MyIngress.aggr_unpack",
+            "table": "MyEgress.aggr_unpack",
             "match": {
               "standard_metadata.egress_port": 3
             },
-            "action_name": "MyIngress.doUnpack",
+            "action_name": "MyEgress.doUnpack",
             "action_params": {
               "monitorAddr": "10.1.3.3"
             }

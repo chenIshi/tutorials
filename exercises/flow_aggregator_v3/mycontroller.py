@@ -234,11 +234,11 @@ def main(p4info_file_path, bmv2_file_path):
                     dst_mac_addr="08:00:00:00:04:00", dst_port=2)
 
         # writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.0.1.1", dst_ip_mask=32,
-                    dst_mac_addr="08:00:00:00:01:00", dst_port=1)
+        #            dst_mac_addr="08:00:00:00:01:00", dst_port=1)
         # writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.0.2.2", dst_ip_mask=32,
-                    dst_mac_addr="08:00:00:00:02:00", dst_port=2)
+        #            dst_mac_addr="08:00:00:00:02:00", dst_port=2)
         # writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.0.3.3", dst_ip_mask=32,
-                    dst_mac_addr="08:00:00:00:03:00", dst_port=3)
+        #            dst_mac_addr="08:00:00:00:03:00", dst_port=3)
 
         writeL2Forwarding(p4info_helper, switch=s2, dst_ip_addr="10.0.1.1", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:04:00", dst_port=2)
@@ -262,11 +262,11 @@ def main(p4info_file_path, bmv2_file_path):
                     dst_mac_addr="08:00:00:00:04:00", dst_port=2)
 
         # writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.1.1.1", dst_ip_mask=32,
-                    dst_mac_addr="08:00:00:00:01:00", dst_port=1)
+        #            dst_mac_addr="08:00:00:00:01:00", dst_port=1)
         # writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.1.2.2", dst_ip_mask=32,
-                    dst_mac_addr="08:00:00:00:02:00", dst_port=2)
+        #            dst_mac_addr="08:00:00:00:02:00", dst_port=2)
         # writeL2Forwarding(p4info_helper, switch=s4, dst_ip_addr="10.1.3.3", dst_ip_mask=32,
-                    dst_mac_addr="08:00:00:00:03:00", dst_port=3)
+        #            dst_mac_addr="08:00:00:00:03:00", dst_port=3)
 
         writeL2Forwarding(p4info_helper, switch=s2, dst_ip_addr="10.1.1.1", dst_ip_mask=32,
                     dst_mac_addr="08:00:00:00:04:00", dst_port=2)
