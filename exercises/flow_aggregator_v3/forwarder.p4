@@ -5,7 +5,7 @@
 const bit<16> TYPE_IPV4 = 0x800;
 const bit<8> TYPE_CONTROL = 0x9F;
 const bit<32> MAX_QUERY_ID = 1 << 16;
-const bit<16> LOSS_PER_COUNT = 50;
+const bit<16> LOSS_PER_COUNT = 100;
 
 const bit<32> I2E_CLONE_SESSION_ID = 5;
 
@@ -152,7 +152,7 @@ control MyIngress(inout headers hdr,
     bit <8> temp_monNum;
     bit <16> temp_timestamp;
     bit <16> temp_count;
-    ip4Addr_t temp_aggregator_ip;
+    ip4Addr_t temp_aggregator_ip = 0;
 
     action drop() {
         mark_to_drop(standard_metadata);
