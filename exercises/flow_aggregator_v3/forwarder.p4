@@ -364,9 +364,11 @@ control MyEgress(inout headers hdr,
     }
     
     apply { 
+        /*
         if (standard_metadata.egress_port == standard_metadata.ingress_port) {
             drop();
         }
+        */
         if (IS_REPLICATED(standard_metadata)) {
             aggr_unpack.apply();
         }
