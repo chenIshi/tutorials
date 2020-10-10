@@ -104,7 +104,7 @@ def writeAggrDispatching(p4info_helper, switch, my_ip_addr, queryID, mId, dst_ip
     switch.WritePREEntry(mcast_entry1)
 
 
-def writeAggregating(p4info_helper, switch, dst_ip_addr, queryID):
+def writeAggregating(p4info_helper, switch, dst_ip_addr, queryID, my_ip_addr):
     """
     Aggregator should response once control packet whose destination is controller
     """
@@ -116,6 +116,7 @@ def writeAggregating(p4info_helper, switch, dst_ip_addr, queryID):
         action_name="MyIngress.ipv4_aggregation",
         action_params= {
             "queryID": queryID,
+            "aggregator_ip": my_ip_addr,
         })
 
     switch.WriteTableEntry(table_entry)
@@ -306,7 +307,7 @@ def main(p4info_file_path, bmv2_file_path):
         writeFlowCountQuery(p4info_helper, switch=s3, query_id=1, dst_ip_addr="10.0.3.0", dst_ip_mask=24)
 
         writeAggrDispatching(p4info_helper, switch=s4, my_ip_addr="10.1.4.4", queryID=1, mId=1, dst_ip_addr1="10.1.2.2", dst_ip_addr2="10.1.3.3", dport1=2, dport2=3)
-        writeAggregating(p4info_helper, switch=s4, dst_ip_addr="10.0.1.1", queryID=1)
+        writeAggregating(p4info_helper, switch=s4, dst_ip_addr="10.0.1.1", queryID=1, my_ip_addr="10.1.4.4")
 
         # TODO Uncomment the following two lines to read table entries from s1 and s2
         readTableRules(p4info_helper, s2)

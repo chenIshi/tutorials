@@ -152,6 +152,7 @@ control MyIngress(inout headers hdr,
     bit <8> temp_monNum;
     bit <16> temp_timestamp;
     bit <16> temp_count;
+    ip4Addr_t temp_aggregator_ip;
 
     action drop() {
         mark_to_drop(standard_metadata);
@@ -220,7 +221,7 @@ control MyIngress(inout headers hdr,
         */
     }
 
-    action ipv4_aggregation(bit<16> queryID) {
+    action ipv4_aggregation(bit<16> queryID, ip4Addr_t aggregator_ip) {
         /*
         bit <8> temp_monNum;
         bit <16> temp_timestamp;
@@ -230,7 +231,7 @@ control MyIngress(inout headers hdr,
         /* if the aggregator is responsible for the query */
         if (hdr.myControl.queryID == queryID) {
             aggr_query_id = queryID;
-
+            temp_aggregator_ip = aggregator_ip;
         }
     }
 
@@ -312,6 +313,7 @@ control MyIngress(inout headers hdr,
 
                         if (temp_monNum + 1 >= hdr.myControl.monNum) {
                             queryCounters.read(hdr.myControl.flowCount, (bit<32>)aggr_query_id);
+                            hdr.ipv4.srcAddr = temp_aggregator_ip;
                             queryCounters.write((bit<32>)aggr_query_id, 0);
                             acked_monitor_number.write((bit<32>)aggr_query_id, 0);
                         } else {
