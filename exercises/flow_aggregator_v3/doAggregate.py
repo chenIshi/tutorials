@@ -10,6 +10,7 @@ CTRL_PROTO = 0x9F
 POLL_RETRIAL_MAXNUM = 6
 POLLING_NUMBER = 5
 
+MONITOR_NUMs_PER_QUERY = 2
 FETCH_SUCCESS = False
 Timestamp = 0
 
@@ -34,7 +35,7 @@ def mpoll(destMAC, destIP, qid, timestamp):
         return
     
     # mcast to monitors
-    ctrl_payload = Control_t(qid=qid, monNum=len(destIP), timestamp=Timestamp)
+    ctrl_payload = Control_t(qid=qid, monNum=MONITOR_NUMs_PER_QUERY, timestamp=Timestamp)
     poll_pkt = Ether()/IP(src=LOCAL_IPADDR, proto=CTRL_PROTO)/ctrl_payload
 
     for mon_idx in range(len(destIP)):
