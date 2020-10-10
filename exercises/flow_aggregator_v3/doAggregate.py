@@ -8,7 +8,7 @@ POLLING_PERIOD = 0.05
 LOCAL_IPADDR = "10.0.1.1"
 CTRL_PROTO = 0x9F
 POLL_RETRIAL_MAXNUM = 6
-POLLING_NUMBER = 5
+POLLING_NUMBER = 1000
 
 MONITOR_NUMs_PER_QUERY = 2
 FETCH_SUCCESS = False
@@ -42,7 +42,7 @@ def mpoll(destMAC, destIP, qid, timestamp):
         poll_pkt[Ether].dst = destMAC[mon_idx]
         poll_pkt[IP].dst = destIP[mon_idx]
 	if mon_idx == (len(destIP) - 1):
-            reply = srp1(poll_pkt, timeout=POLLING_PERIOD)
+            reply = srp1(poll_pkt, timeout=POLLING_PERIOD, verbose=0)
             if not (reply is None):
                 if IP in reply:
                     if reply[IP].proto == CTRL_PROTO:
