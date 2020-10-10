@@ -311,6 +311,7 @@ def main(p4info_file_path, bmv2_file_path):
         # TODO Uncomment the following two lines to read table entries from s1 and s2
         readTableRules(p4info_helper, s2)
         readTableRules(p4info_helper, s3)
+        readTableRules(p4info_helper, s4)
 
         # Print the tunnel counters every 2 seconds
         while True:
