@@ -128,7 +128,6 @@ def writeAggregating(p4info_helper, switch, dst_ip_addr, queryID, my_ip_addr, to
         action_params= {
             "monitor_num": total_monitor_number,
         })
-    )
 
     switch.WriteTableEntry(table_entry1)
     switch.WriteTableEntry(table_entry2)
