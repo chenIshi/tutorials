@@ -54,8 +54,6 @@ header ipv4_t {
 
 header myControl_t {
     bit<16> queryID;
-    /* Number of monitor in that query*/
-    bit<8> monNum;
     bit<16> flowCount;
     bit<16> timestamp;
 }
@@ -149,7 +147,8 @@ control MyIngress(inout headers hdr,
     /* isAskingForResponse = 2 for monitors,  1 for aggregators, 0 for not responsing */
     bit <2> isAskingForResponse = 0;
 
-    bit <8> temp_monNum;
+    bit <8> seen_monNum;
+    bit <8> total_monNum = 0;
     bit <16> temp_timestamp;
     bit <16> temp_count;
     ip4Addr_t temp_aggregator_ip = 0;
@@ -223,7 +222,7 @@ control MyIngress(inout headers hdr,
 
     action ipv4_aggregation(bit<16> queryID, ip4Addr_t aggregator_ip) {
         /*
-        bit <8> temp_monNum;
+        bit <8> seen_monNum;
         bit <16> temp_timestamp;
         bit <16> temp_count;
         */
@@ -244,6 +243,22 @@ control MyIngress(inout headers hdr,
             NoAction;
             ipv4_response;
             ipv4_aggregation;
+        }
+        size = 1024;
+        default_action = NoAction();
+    }
+
+    action doCheck(bit<8> monitor_num) {
+        total_monNum = monitor_num;
+    }
+
+    table check_aggregate_satisfied {
+        key = {
+            hdr.myControl.queryID: exact;
+        }
+        actions = {
+            NoAction;
+            doCheck;
         }
         size = 1024;
         default_action = NoAction();
@@ -308,10 +323,12 @@ control MyIngress(inout headers hdr,
                         }
                         queryCounters.read(temp_count, (bit<32>)aggr_query_id);
                         queryCounters.write((bit<32>)aggr_query_id, temp_count + hdr.myControl.flowCount);
-                        acked_monitor_number.read(temp_monNum, (bit<32>)aggr_query_id);
-                        acked_monitor_number.write((bit<32>)aggr_query_id, temp_monNum+1);
+                        acked_monitor_number.read(seen_monNum, (bit<32>)aggr_query_id);
+                        acked_monitor_number.write((bit<32>)aggr_query_id, seen_monNum+1);
 
-                        if (temp_monNum + 1 >= hdr.myControl.monNum) {
+                        check_aggregate_satisfied.apply();
+
+                        if (total_monNum > 0 && seen_monNum + 1 >= total_monNum) {
                             queryCounters.read(hdr.myControl.flowCount, (bit<32>)aggr_query_id);
                             hdr.ipv4.srcAddr = temp_aggregator_ip;
                             queryCounters.write((bit<32>)aggr_query_id, 0);

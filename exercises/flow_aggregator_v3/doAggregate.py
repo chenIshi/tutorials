@@ -10,7 +10,7 @@ CTRL_PROTO = 0x9F
 POLL_RETRIAL_MAXNUM = 6
 POLLING_NUMBER = 1000
 
-MONITOR_NUMs_PER_QUERY = 2
+# MONITOR_NUMs_PER_QUERY = 2
 FETCH_SUCCESS = False
 Timestamp = 0
 
@@ -20,7 +20,6 @@ class Control_t(Packet):
     name = "Control_t "
     fields_desc = [
         ShortField("qid", 0),
-        XByteField("monNum", 0),
         ShortField("count", 0),
         ShortField("timestamp", 0)
     ]
@@ -35,7 +34,7 @@ def mpoll(destMAC, destIP, qid, timestamp):
         return
     
     # mcast to monitors
-    ctrl_payload = Control_t(qid=qid, monNum=MONITOR_NUMs_PER_QUERY, timestamp=Timestamp)
+    ctrl_payload = Control_t(qid=qid, timestamp=Timestamp)
     poll_pkt = Ether()/IP(src=LOCAL_IPADDR, proto=CTRL_PROTO)/ctrl_payload
 
     for mon_idx in range(len(destIP)):
@@ -46,7 +45,7 @@ def mpoll(destMAC, destIP, qid, timestamp):
             if not (reply is None):
                 if IP in reply:
                     if reply[IP].proto == CTRL_PROTO:
-                        fetched_timestamp = struct.unpack('>H', bytes(reply[IP].payload)[5:7])
+                        fetched_timestamp = struct.unpack('>H', bytes(reply[IP].payload)[4:6])
                         if fetched_timestamp[0] == Timestamp:
                             FETCH_SUCCESS = True
                             # print("Polled %d" % (fetched_timestamp[0]))
