@@ -237,6 +237,7 @@ control MyIngress(inout headers hdr,
     table control_handler {
         key = {
             hdr.ipv4.dstAddr: exact;
+            hdr.myControl.queryID: exact;
         }
         actions = {
             drop;

@@ -34,14 +34,16 @@ def writeL2Forwarding(p4info_helper, switch, dst_ip_addr, dst_ip_mask,
 
     switch.WriteTableEntry(table_entry)
 
-def writeMonResponse(p4info_helper, switch, dst_ip_addr):
+def writeMonResponse(p4info_helper, switch, dst_ip_addr, query_id):
     """
     Monitor should response once destination is its (virtual) IP
+    and it is a monitor under its queryID
     """
     table_entry = p4info_helper.buildTableEntry(
         table_name="MyIngress.control_handler",
         match_fields={
-            "hdr.ipv4.dstAddr": dst_ip_addr
+            "hdr.ipv4.dstAddr": dst_ip_addr,
+            "hdr.myControl.queryID": query_id
         },
         action_name="MyIngress.ipv4_response",
         action_params= {
@@ -57,7 +59,8 @@ def writeAggrDispatching(p4info_helper, switch, my_ip_addr, queryID, mId, dst_ip
     table_entry1 = p4info_helper.buildTableEntry(
         table_name="MyIngress.control_handler",
         match_fields={
-            "hdr.ipv4.dstAddr": my_ip_addr
+            "hdr.ipv4.dstAddr": my_ip_addr,
+            "hdr.myControl.queryID": queryID
         },
         action_name="MyIngress.ipv4_response",
         action_params= {
@@ -111,7 +114,8 @@ def writeAggregating(p4info_helper, switch, dst_ip_addr, queryID, my_ip_addr, to
     table_entry1 = p4info_helper.buildTableEntry(
         table_name="MyIngress.control_handler",
         match_fields={
-            "hdr.ipv4.dstAddr": dst_ip_addr
+            "hdr.ipv4.dstAddr": dst_ip_addr,
+            "hdr.myControl.queryID": queryID
         },
         action_name="MyIngress.ipv4_aggregation",
         action_params= {
@@ -311,8 +315,8 @@ def main(p4info_file_path, bmv2_file_path):
 
         # Flow aggr
 
-        writeMonResponse(p4info_helper, switch=s2, dst_ip_addr="10.1.2.2")
-        writeMonResponse(p4info_helper, switch=s3, dst_ip_addr="10.1.3.3")
+        writeMonResponse(p4info_helper, switch=s2, dst_ip_addr="10.1.2.2", query_id=1)
+        writeMonResponse(p4info_helper, switch=s3, dst_ip_addr="10.1.3.3", query_id=1)
 
         writeFlowCountQuery(p4info_helper, switch=s2, query_id=1, dst_ip_addr="10.0.2.0", dst_ip_mask=24)
         writeFlowCountQuery(p4info_helper, switch=s3, query_id=1, dst_ip_addr="10.0.3.0", dst_ip_mask=24)
