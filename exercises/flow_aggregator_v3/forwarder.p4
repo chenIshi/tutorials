@@ -329,7 +329,7 @@ control MyIngress(inout headers hdr,
                         queryCounters.read(temp_count, (bit<32>)aggr_query_id);
                         aggregate_summand = temp_count + hdr.myControl.flowCount;
                         // check if it is overflowed
-                        if (aggregate_summand < temp_count || aggregate_summand < hdr.myControl.flowCount) {
+                        if (aggregate_summand < 5 || aggregate_summand < hdr.myControl.flowCount) {
                             hdr.myControl.flagOverflow = 1;
                         }
                         queryCounters.write((bit<32>)aggr_query_id, temp_count + hdr.myControl.flowCount);

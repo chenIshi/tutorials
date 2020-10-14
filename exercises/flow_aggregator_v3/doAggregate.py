@@ -50,6 +50,11 @@ def mpoll(destMAC, destIP, qid, timestamp):
                         fetched_timestamp = struct.unpack('>H', bytes(reply[IP].payload)[5:7])
                         if fetched_timestamp[0] == Timestamp:
                             FETCH_SUCCESS = True
+                            unpure_flags = struct.unpack('>H', bytes(reply[IP].payload)[2])
+                            overflow_flags = (unpure_flags[0] & 0b10000000) >> 7
+                            cleanup_flags = (unpure_flags[0] & 0b01100000) >> 5
+                            if overflow_flags == 1:
+                                print("Overflowed!")
                             # print("Polled %d" % (fetched_timestamp[0]))
                         else:
                             print("Get Wrong Timestamp %d instead of %d" % (fetched_timestamp[0], Timestamp))
