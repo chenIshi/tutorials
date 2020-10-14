@@ -8,7 +8,7 @@ POLLING_PERIOD = 0.05
 LOCAL_IPADDR = "10.0.1.1"
 CTRL_PROTO = 0x9F
 POLL_RETRIAL_MAXNUM = 6
-POLLING_NUMBER = 1000
+POLLING_NUMBER = 30
 
 # MONITOR_NUMs_PER_QUERY = 2
 FETCH_SUCCESS = False
@@ -50,7 +50,7 @@ def mpoll(destMAC, destIP, qid, timestamp):
                         fetched_timestamp = struct.unpack('>H', bytes(reply[IP].payload)[5:7])
                         if fetched_timestamp[0] == Timestamp:
                             FETCH_SUCCESS = True
-                            unpure_flags = struct.unpack('>H', bytes(reply[IP].payload)[2])
+                            unpure_flags = struct.unpack('>B', bytes(reply[IP].payload)[2:3])
                             overflow_flags = (unpure_flags[0] & 0b10000000) >> 7
                             cleanup_flags = (unpure_flags[0] & 0b01100000) >> 5
                             if overflow_flags == 1:
