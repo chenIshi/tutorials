@@ -8,8 +8,12 @@ POLLING_PERIOD = 0.05
 LOCAL_IPADDR = "10.0.1.1"
 CTRL_PROTO = 0x9F
 POLL_RETRIAL_MAXNUM = 6
+<<<<<<< HEAD
 POLLING_NUMBER = 1000
 RST_COUNTER_PERIOD = 10
+=======
+POLLING_NUMBER = 30
+>>>>>>> 03f40a848913e6d492ba20dc10444f3301305b03
 
 # MONITOR_NUMs_PER_QUERY = 2
 FETCH_SUCCESS = False
@@ -51,6 +55,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     for mon_idx in range(len(destIP)):
         poll_pkt[Ether].dst = destMAC[mon_idx]
         poll_pkt[IP].dst = destIP[mon_idx]
+<<<<<<< HEAD
         
         reply = srp1(poll_pkt, timeout=POLLING_PERIOD, verbose=0)
         if not (reply is None):
@@ -60,7 +65,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                     if fetched_timestamp[0] == Timestamp:
                         FETCH_SUCCESS = True
                         isCleanup = False
-                        unpure_flags = struct.unpack('>H', bytes(reply[IP].payload)[2])
+                        unpure_flags = struct.unpack('>B', bytes(reply[IP].payload)[2:3])
                         overflow_flags = (unpure_flags[0] & 0b10000000) >> 7
                         cleanup_flags = (unpure_flags[0] & 0b01000000) >> 6
                         if overflow_flags == 1:
