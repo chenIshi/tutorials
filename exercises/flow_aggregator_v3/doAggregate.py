@@ -20,9 +20,11 @@ class Control_t(Packet):
     name = "Control_t "
     fields_desc = [
         ShortField("qid", 0),
-        ShortField("count", 0),
+        BitField("flagOverflow", 0, 1),
+        BitField("flagCleanup", 0, 2),
+        BitField("count", 0, 21),
         ShortField("timestamp", 0)
-    ]
+]
 
 # can improve with rev-aggr maybe
 def mpoll(destMAC, destIP, qid, timestamp):
@@ -45,7 +47,7 @@ def mpoll(destMAC, destIP, qid, timestamp):
             if not (reply is None):
                 if IP in reply:
                     if reply[IP].proto == CTRL_PROTO:
-                        fetched_timestamp = struct.unpack('>H', bytes(reply[IP].payload)[4:6])
+                        fetched_timestamp = struct.unpack('>H', bytes(reply[IP].payload)[5:7])
                         if fetched_timestamp[0] == Timestamp:
                             FETCH_SUCCESS = True
                             # print("Polled %d" % (fetched_timestamp[0]))

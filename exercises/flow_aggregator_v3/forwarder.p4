@@ -54,7 +54,9 @@ header ipv4_t {
 
 header myControl_t {
     bit<16> queryID;
-    bit<16> flowCount;
+    bit <1> flagOverflow;
+    bit <2> flagCleanup;
+    bit<21> flowCount;
     bit<16> timestamp;
 }
 
@@ -124,7 +126,7 @@ control MyIngress(inout headers hdr,
 
     // p416 doesn't allow to read counter in data plane
     // queryCounter store querycount in both monitor and aggregator
-    register<bit<16>>(MAX_QUERY_ID) queryCounters;
+    register<bit<21>>(MAX_QUERY_ID) queryCounters;
     /* Both acked_monitor_number and last_seen_timestamp is for aggregator*/
     register <bit <8>> (MAX_QUERY_ID) acked_monitor_number;
     /* last_seen_timestamp is used to detect retransmittion of controller */
@@ -134,7 +136,7 @@ control MyIngress(inout headers hdr,
 
     /* reg_count acted as buffer
         but behaves differently between monitors and aggregators */
-    bit<16> reg_count = 0;
+    bit<21> reg_count = 0;
     /* ctrl_addr/ctrl_mac is temp buffer for monitor */
     ip4Addr_t ctrl_addr;
     bit<48> ctrl_mac;
@@ -150,7 +152,7 @@ control MyIngress(inout headers hdr,
     bit <8> seen_monNum;
     bit <8> total_monNum = 0;
     bit <16> temp_timestamp;
-    bit <16> temp_count;
+    bit <21> temp_count;
     ip4Addr_t temp_aggregator_ip = 0;
 
     action drop() {
@@ -269,6 +271,7 @@ control MyIngress(inout headers hdr,
 
     apply {
         bit<16> temp_loss_count;
+        bit<21> aggregate_summand;
         loss_counter.read(temp_loss_count, 0);
         loss_counter.write(0, temp_loss_count + 1);
 
@@ -322,7 +325,13 @@ control MyIngress(inout headers hdr,
                             acked_monitor_number.write((bit<32>)aggr_query_id, 0);
                             last_seen_timestamp.write((bit<32>)aggr_query_id, hdr.myControl.timestamp);
                         }
+
                         queryCounters.read(temp_count, (bit<32>)aggr_query_id);
+                        aggregate_summand = temp_count + hdr.myControl.flowCount;
+                        // check if it is overflowed
+                        if (aggregate_summand < temp_count || aggregate_summand < hdr.myControl.flowCount) {
+                            hdr.myControl.flagOverflow = 1;
+                        }
                         queryCounters.write((bit<32>)aggr_query_id, temp_count + hdr.myControl.flowCount);
                         acked_monitor_number.read(seen_monNum, (bit<32>)aggr_query_id);
                         acked_monitor_number.write((bit<32>)aggr_query_id, seen_monNum+1);
