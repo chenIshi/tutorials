@@ -55,8 +55,8 @@ header ipv4_t {
 header myControl_t {
     bit<16> queryID;
     bit <1> flagOverflow;
-    bit <2> flagCleanup;
-    bit<21> flowCount;
+    bit <1> flagCleanup;
+    bit<22> flowCount;
     bit<16> timestamp;
 }
 
@@ -126,7 +126,7 @@ control MyIngress(inout headers hdr,
 
     // p416 doesn't allow to read counter in data plane
     // queryCounter store querycount in both monitor and aggregator
-    register<bit<21>>(MAX_QUERY_ID) queryCounters;
+    register<bit<22>>(MAX_QUERY_ID) queryCounters;
     /* Both acked_monitor_number and last_seen_timestamp is for aggregator*/
     register <bit <8>> (MAX_QUERY_ID) acked_monitor_number;
     /* last_seen_timestamp is used to detect retransmittion of controller */
@@ -136,7 +136,7 @@ control MyIngress(inout headers hdr,
 
     /* reg_count acted as buffer
         but behaves differently between monitors and aggregators */
-    bit<21> reg_count = 0;
+    bit<22> reg_count = 0;
     /* ctrl_addr/ctrl_mac is temp buffer for monitor */
     ip4Addr_t ctrl_addr;
     bit<48> ctrl_mac;
@@ -152,7 +152,7 @@ control MyIngress(inout headers hdr,
     bit <8> seen_monNum;
     bit <8> total_monNum = 0;
     bit <16> temp_timestamp;
-    bit <21> temp_count;
+    bit <22> temp_count;
     ip4Addr_t temp_aggregator_ip = 0;
 
     action drop() {
@@ -271,7 +271,7 @@ control MyIngress(inout headers hdr,
 
     apply {
         bit<16> temp_loss_count;
-        bit<21> aggregate_summand;
+        bit<22> aggregate_summand;
         loss_counter.read(temp_loss_count, 0);
         loss_counter.write(0, temp_loss_count + 1);
 
@@ -304,6 +304,7 @@ control MyIngress(inout headers hdr,
                             queryCounters.read(reg_count, (bit<32>)hdr.myControl.queryID);
                             /* TODO: delete + 2 here (only for debugging)*/
                             hdr.myControl.flowCount = reg_count + 2;
+                            queryCounters.write((bit<32>)hdr.myControl.queryID, reg_count + 2);
 
                             /* send back to controller */
                             ctrl_addr = hdr.ipv4.srcAddr;
@@ -315,6 +316,12 @@ control MyIngress(inout headers hdr,
                             hdr.ethernet.dstAddr= ctrl_mac;
 
                             standard_metadata.egress_spec=standard_metadata.ingress_port;
+
+                            /* check if the controller want to  cleanup counter */
+                            if (hdr.myControl.flagCleanup == 1) {
+                                queryCounters.write((bit<32>)hdr.myControl.queryID, 0);
+                            }
+
                         }
                     }
                     // do aggregate
