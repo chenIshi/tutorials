@@ -8,12 +8,8 @@ POLLING_PERIOD = 0.05
 LOCAL_IPADDR = "10.0.1.1"
 CTRL_PROTO = 0x9F
 POLL_RETRIAL_MAXNUM = 6
-<<<<<<< HEAD
 POLLING_NUMBER = 1000
 RST_COUNTER_PERIOD = 10
-=======
-POLLING_NUMBER = 30
->>>>>>> 03f40a848913e6d492ba20dc10444f3301305b03
 
 # MONITOR_NUMs_PER_QUERY = 2
 FETCH_SUCCESS = False
@@ -36,7 +32,7 @@ class Control_t(Packet):
 def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     global FETCH_SUCCESS
     global Timestamp
-    global Cleanup_this_round
+    global isCleanup
 
     FETCH_SUCCESS = False
     if len(destMAC) != len(destIP):
@@ -55,7 +51,6 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     for mon_idx in range(len(destIP)):
         poll_pkt[Ether].dst = destMAC[mon_idx]
         poll_pkt[IP].dst = destIP[mon_idx]
-<<<<<<< HEAD
         
         reply = srp1(poll_pkt, timeout=POLLING_PERIOD, verbose=0)
         if not (reply is None):
