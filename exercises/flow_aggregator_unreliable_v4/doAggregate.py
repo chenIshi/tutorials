@@ -8,7 +8,7 @@ POLLING_PERIOD = 0.05
 LOCAL_IPADDR = "10.0.1.1"
 CTRL_PROTO = 0x9F
 POLL_RETRIAL_MAXNUM = 6
-POLLING_NUMBER = 1000
+POLLING_NUMBER = 50
 RST_COUNTER_PERIOD = 10
 
 # MONITOR_NUMs_PER_QUERY = 2
@@ -60,7 +60,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
         poll_pkt[Ether].dst = destMAC[mon_idx]
         poll_pkt[IP].dst = destIP[mon_idx]
         
-        reply = srp1(poll_pkt, timeout=POLLING_PERIOD, verbose=0)
+        reply = srp1(poll_pkt, timeout=POLLING_PERIOD, verbose=1)
         if not (reply is None):
             if IP in reply:
                 if reply[IP].proto == CTRL_PROTO:
@@ -71,6 +71,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                         response_id = struct.unpack('>H', bytes(reply[IP].payload)[7:9])
                         monitor_bitmap = struct.unpack('>H', bytes(reply[IP].payload)[9:11])
                         if monitor_bitmap != 0xFFFF:
+                            print("error bitmap = %d" % (monitor_bitmap))
                             errorcount += 1
                         
                     else:
@@ -97,3 +98,5 @@ if __name__ == "__main__":
             failcount += 1
 
         FETCH_SUCCESS = False
+
+    print("Failed count = %d, error count = %d" % (failcount, errorcount))

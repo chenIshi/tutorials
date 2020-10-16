@@ -123,6 +123,7 @@ def writeAggregating(p4info_helper, switch, dst_ip_addr, queryID, my_ip_addr, to
             "aggregator_ip": my_ip_addr,
         })
 
+    '''
     table_entry2 = p4info_helper.buildTableEntry(
         table_name="MyIngress.check_aggregate_satisfied",
         match_fields={
@@ -132,9 +133,10 @@ def writeAggregating(p4info_helper, switch, dst_ip_addr, queryID, my_ip_addr, to
         action_params= {
             "monitor_num": total_monitor_number,
         })
+    '''
 
     switch.WriteTableEntry(table_entry1)
-    switch.WriteTableEntry(table_entry2)
+    # switch.WriteTableEntry(table_entry2)
 
 def writeFlowCountQuery(p4info_helper, switch, query_id, dst_ip_addr, dst_ip_mask):
     """
@@ -152,7 +154,7 @@ def writeFlowCountQuery(p4info_helper, switch, query_id, dst_ip_addr, dst_ip_mas
     
     switch.WriteTableEntry(table_entry)
 
-    def writeMonitorID(p4info_helper, switch, monitor_ip, monitor_id):
+def writeMonitorID(p4info_helper, switch, monitor_ip, monitor_id):
     """
     Setup query config for monitors
     """
@@ -340,8 +342,8 @@ def main(p4info_file_path, bmv2_file_path):
         writeAggrDispatching(p4info_helper, switch=s4, my_ip_addr="10.1.4.4", queryID=1, mId=1, dst_ip_addr1="10.1.2.2", dst_ip_addr2="10.1.3.3", dport1=2, dport2=3)
         writeAggregating(p4info_helper, switch=s4, dst_ip_addr="10.0.1.1", queryID=1, my_ip_addr="10.1.4.4", total_monitor_number=2)
 
-        writeMonitorID(p4info_helper, switch=s4, monitor_ip="10.1.2.2", monitor_id=1)
-        writeMonitorID(p4info_helper, switch=s4, monitor_ip="10.1.3.3", monitor_id=2)
+        writeMonitorID(p4info_helper, switch=s4, monitor_ip="10.1.2.2", monitor_id=0xFFFD)
+        writeMonitorID(p4info_helper, switch=s4, monitor_ip="10.1.3.3", monitor_id=0xFFFE)
 
         # TODO Uncomment the following two lines to read table entries from s1 and s2
         readTableRules(p4info_helper, s2)

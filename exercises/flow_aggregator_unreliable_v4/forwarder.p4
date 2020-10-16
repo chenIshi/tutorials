@@ -152,7 +152,7 @@ control MyIngress(inout headers hdr,
     /* isAskingForResponse = 2 for monitors,  1 for aggregators, 0 for not responsing */
     bit <2> isAskingForResponse = 0;
 
-    bit <8> seen_monNum;
+    monitorBitmap_t seen_monNum;
     bit <8> total_monNum = 0;
     bit <16> temp_timestamp;
     bit <22> temp_count;
@@ -351,6 +351,7 @@ control MyIngress(inout headers hdr,
                         if (temp_timestamp < hdr.myControl.timestamp) {
                             queryCounters.read(hdr.myControl.flowCount, (bit<32>)aggr_query_id);
                             hdr.myControl.responseID = temp_timestamp;
+                            hdr.ipv4.srcAddr = temp_aggregator_ip;
                             acked_monitor_number.read(hdr.myControl.monitorBitmap, (bit<32>)aggr_query_id);
                             // cleanup the aggregate counter
                             queryCounters.write((bit<32>)aggr_query_id, 0);
