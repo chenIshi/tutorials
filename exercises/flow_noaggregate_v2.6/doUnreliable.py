@@ -45,7 +45,7 @@ def mpoll(destMAC, destIP, qid, timestamp):
         if not (reply is None):
             if IP in reply:
                 if reply[IP].proto == CTRL_PROTO:
-                    fetched_timestamp = struct.unpack('>H', bytes(reply[IP].payload)[5:7])
+                    fetched_timestamp = struct.unpack('>H', bytes(reply[IP].payload)[4:6])
                     if fetched_timestamp[0] == Timestamp:
                         local_aggr_count += 1
                         if local_aggr_count >= len(destIP):
