@@ -157,7 +157,6 @@ control MyIngress(inout headers hdr,
     bit <16> temp_timestamp;
     bit <22> temp_count;
     ip4Addr_t temp_aggregator_ip = 0;
-    monitorBitmap_t monitor_id = 0;
 
     action drop() {
         mark_to_drop(standard_metadata);
@@ -272,12 +271,12 @@ control MyIngress(inout headers hdr,
     }
 
     action doConsole(monitorBitmap_t monitorID) {
-        monitor_id = monitorID;
+        hdr.myControl.monitorBitmap = monitorID | hdr.myControl.monitorBitmap;
     }
 
     table consoleMonitorID {
         key = {
-            hdr.ipv4.srcAddr: exact;
+            hdr.myControl.monitorBitmap: exact;
         }
         actions = {
             NoAction;
@@ -325,6 +324,7 @@ control MyIngress(inout headers hdr,
                             /* TODO: delete + 2 here (only for debugging)*/
                             hdr.myControl.flowCount = reg_count + 2;
                             queryCounters.write((bit<32>)hdr.myControl.queryID, reg_count + 2);
+                            consoleMonitorID.apply();
 
                             /* send back to controller */
                             ctrl_addr = hdr.ipv4.srcAddr;
@@ -361,7 +361,7 @@ control MyIngress(inout headers hdr,
                         } else {
                             control_drop = 1;
                         }
-                        // kick those outdated packets off
+                        // we don't care about outdated packets off
                         if (temp_timestamp <= hdr.myControl.timestamp) {
                             queryCounters.read(temp_count, (bit<32>)aggr_query_id);
                             aggregate_summand = temp_count + hdr.myControl.flowCount;
@@ -370,11 +370,9 @@ control MyIngress(inout headers hdr,
                                 hdr.myControl.flagOverflow = 1;
                             }
 
-                            consoleMonitorID.apply();
-
                             queryCounters.write((bit<32>)aggr_query_id, temp_count + hdr.myControl.flowCount);
                             acked_monitor_number.read(seen_monNum, (bit<32>)aggr_query_id);
-                            acked_monitor_number.write((bit<32>)aggr_query_id, seen_monNum | monitor_id);
+                            acked_monitor_number.write((bit<32>)aggr_query_id, seen_monNum | hdr.myControl.monitorBitmap);
                         }
                         
 

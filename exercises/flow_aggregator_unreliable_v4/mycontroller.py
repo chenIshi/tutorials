@@ -154,14 +154,14 @@ def writeFlowCountQuery(p4info_helper, switch, query_id, dst_ip_addr, dst_ip_mas
     
     switch.WriteTableEntry(table_entry)
 
-def writeMonitorID(p4info_helper, switch, monitor_ip, monitor_id):
+def writeMonitorID(p4info_helper, switch, bitmap_mask, monitor_id):
     """
     Setup query config for monitors
     """
     table_entry = p4info_helper.buildTableEntry(
         table_name="MyIngress.consoleMonitorID",
         match_fields={
-            "hdr.ipv4.srcAddr": monitor_ip
+            "hdr.myControl.monitorBitmap": bitmap_mask
         },
         action_name="MyIngress.doConsole",
         action_params={
@@ -342,8 +342,8 @@ def main(p4info_file_path, bmv2_file_path):
         writeAggrDispatching(p4info_helper, switch=s4, my_ip_addr="10.1.4.4", queryID=1, mId=1, dst_ip_addr1="10.1.2.2", dst_ip_addr2="10.1.3.3", dport1=2, dport2=3)
         writeAggregating(p4info_helper, switch=s4, dst_ip_addr="10.0.1.1", queryID=1, my_ip_addr="10.1.4.4", total_monitor_number=2)
 
-        writeMonitorID(p4info_helper, switch=s4, monitor_ip="10.1.2.2", monitor_id=0xFFFD)
-        writeMonitorID(p4info_helper, switch=s4, monitor_ip="10.1.3.3", monitor_id=0xFFFE)
+        writeMonitorID(p4info_helper, switch=s4, bitmap_mask=0xFFFC, monitor_id=0x0001)
+        writeMonitorID(p4info_helper, switch=s4, bitmap_mask=0xFFFC, monitor_id=0x0002)
 
         # TODO Uncomment the following two lines to read table entries from s1 and s2
         readTableRules(p4info_helper, s2)
