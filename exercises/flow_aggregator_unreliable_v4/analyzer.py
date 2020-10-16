@@ -25,6 +25,10 @@ accumulatedPPS = 0
 def doStatistic(packet):
     global packet_count, throughtput
     global currentTime, accumulatedPPS, PPS
+    # filter out those stupid ICMP protocol unreachiable
+    if IP in packet:
+        if packet[IP].proto == 1:
+            return
 
     packet_count += 1
     throughtput += len(packet)

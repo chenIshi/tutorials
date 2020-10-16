@@ -342,8 +342,8 @@ def main(p4info_file_path, bmv2_file_path):
         writeAggrDispatching(p4info_helper, switch=s4, my_ip_addr="10.1.4.4", queryID=1, mId=1, dst_ip_addr1="10.1.2.2", dst_ip_addr2="10.1.3.3", dport1=2, dport2=3)
         writeAggregating(p4info_helper, switch=s4, dst_ip_addr="10.0.1.1", queryID=1, my_ip_addr="10.1.4.4", total_monitor_number=2)
 
-        writeMonitorID(p4info_helper, switch=s4, bitmap_mask=0xFFFC, monitor_id=0x0001)
-        writeMonitorID(p4info_helper, switch=s4, bitmap_mask=0xFFFC, monitor_id=0x0002)
+        writeMonitorID(p4info_helper, switch=s2, bitmap_mask=0xFFFC, monitor_id=0x0001)
+        writeMonitorID(p4info_helper, switch=s3, bitmap_mask=0xFFFC, monitor_id=0x0002)
 
         # TODO Uncomment the following two lines to read table entries from s1 and s2
         readTableRules(p4info_helper, s2)
