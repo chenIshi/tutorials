@@ -12,6 +12,7 @@ POLLING_NUMBER = 1000
 
 FETCH_SUCCESS = False
 Timestamp = 0
+failcount = 0
 
 # Control packet format
 # https://scapy.readthedocs.io/en/latest/build_dissect.html
@@ -65,14 +66,12 @@ if __name__ == "__main__":
         time.sleep(POLLING_PERIOD)
         # active phase
         retrial_times = 0
-        while (not FETCH_SUCCESS) and (retrial_times < POLL_RETRIAL_MAXNUM):
-            Timestamp += 1
-	    # Timestamp = 1
-            retrial_times += 1
-            mpoll(destMAC=["08:00:00:00:02:22", "08:00:00:00:03:33"], destIP=["10.1.2.2", "10.1.3.3"], qid=1, timestamp=Timestamp)
+        Timestamp += 1
+        mpoll(destMAC=["08:00:00:00:02:22", "08:00:00:00:03:33"], destIP=["10.1.2.2", "10.1.3.3"], qid=1, timestamp=Timestamp)
 
-        if (not FETCH_SUCCESS) and (retrial_times >= POLL_RETRIAL_MAXNUM):
-            print("Retransmittion failed in time %d" % (repoll))
-            break
+        if not FETCH_SUCCESS:
+            failcount += 1
 
         FETCH_SUCCESS = False
+
+    print("Failed count = %d" % (failcount))
