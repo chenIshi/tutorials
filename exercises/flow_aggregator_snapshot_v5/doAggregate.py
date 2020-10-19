@@ -35,7 +35,7 @@ class Snapshot_t(Packet):
     name = "Snapshot_t "
     fields_desc = [
         ShortField("qid", 0),
-        BitField("timestamp", 0, 48),
+        BitField("timestamp", 0, 24),
         ShortField("seq", 0)
 ]
 

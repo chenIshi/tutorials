@@ -32,7 +32,7 @@ const bit<32> BMV2_V1MODEL_INSTANCE_TYPE_RESUBMIT      = 6;
 typedef bit<9>  egressSpec_t;
 typedef bit<48> macAddr_t;
 typedef bit<32> ip4Addr_t;
-typedef bit<48> timestamp_t;
+typedef bit<24> timestamp_t;
 
 header ethernet_t {
     macAddr_t dstAddr;
@@ -354,11 +354,14 @@ control MyIngress(inout headers hdr,
                 if (ipv4_count.apply().hit) {
                     snapshot_timestamp.read(temp_time, (bit<32>)data_plane_queryID);
                     // no snapshot taken yet
-                    if (temp_time > 0  && temp_time < standard_metadata.ingress_global_timestamp) {
-                        snapshot_timestamp.write((bit<32>)data_plane_queryID, 0);
-                        queryCounters.read(temp_snapshot, (bit<32>)data_plane_queryID);
-                        // TODO: should minus 1 here, but currently  0 - 1 will cause overflow
-                        snapshot_value.write((bit<32>)data_plane_queryID, temp_snapshot);
+                    if (temp_time > 0) {
+                        timestamp_t truncated_current_time = (timestamp_t)standard_metadata.ingress_global_timestamp;
+                        if (temp_time < truncated_current_time) {
+                            snapshot_timestamp.write((bit<32>)data_plane_queryID, 0);
+                            queryCounters.read(temp_snapshot, (bit<32>)data_plane_queryID);
+                            // TODO: should minus 1 here, but currently  0 - 1 will cause overflow
+                            snapshot_value.write((bit<32>)data_plane_queryID, temp_snapshot);
+                        }
                     }
                 }
 
@@ -512,7 +515,7 @@ control MyEgress(inout headers hdr,
         if (IS_REPLICATED(standard_metadata)) {
             aggr_unpack.apply();
             if (hdr.mySnapshot.isValid()) {
-                hdr.mySnapshot.timestamp = standard_metadata.ingress_global_timestamp + (timestamp_t)SNAPSHOT_DELAY;
+                hdr.mySnapshot.timestamp = (timestamp_t)standard_metadata.ingress_global_timestamp + (timestamp_t)SNAPSHOT_DELAY;
             }
         }
     }
