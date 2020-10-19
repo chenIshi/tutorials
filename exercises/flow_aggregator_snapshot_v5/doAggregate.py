@@ -7,9 +7,9 @@ import struct
 POLLING_PERIOD = 0.05
 LOCAL_IPADDR = "10.0.1.1"
 CTRL_PROTO = 0x9F
-CTRL_SNAPSHOT = 0xA0
+CTRL_SNAPSHOT = 0x9E
 POLL_RETRIAL_MAXNUM = 6
-POLLING_NUMBER = 30
+POLLING_NUMBER = 1000
 RST_COUNTER_PERIOD = 10
 
 # MONITOR_NUMs_PER_QUERY = 2
@@ -68,7 +68,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
         poll_pkt[Ether].dst = destMAC[mon_idx]
         poll_pkt[IP].dst = destIP[mon_idx]
         
-        reply = srp1(poll_pkt, timeout=POLLING_PERIOD, verbose=1)
+        reply = srp1(poll_pkt, timeout=POLLING_PERIOD, verbose=0)
         if not (reply is None):
             if IP in reply:
                 if reply[IP].proto == CTRL_PROTO:
@@ -86,7 +86,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                     else:
                         print("Get Wrong Timestamp %d instead of %d" % (fetched_timestamp[0], Timestamp))
                 elif reply[IP].proto == CTRL_SNAPSHOT:
-                    fetched_seq = struct.unpack('>H', bytes(reply[IP].payload)[8:10])
+                    fetched_seq = struct.unpack('>H', bytes(reply[IP].payload)[5:7])
                     if fetched_seq[0] == Timestamp:
                         isPoll = True
                 else:

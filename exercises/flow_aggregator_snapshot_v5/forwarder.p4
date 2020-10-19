@@ -4,7 +4,7 @@
 
 const bit<16> TYPE_IPV4 = 0x800;
 const bit<8> TYPE_CONTROL = 0x9F;
-const bit<8> TYPE_SNAPSHOT = 0xA0;
+const bit<8> TYPE_SNAPSHOT = 0x9E;
 const bit<32> MAX_QUERY_ID = 1 << 16;
 const bit<16> LOSS_PER_COUNT = 100;
 const bit<8> SNAPSHOT_DELAY = 2;
@@ -308,11 +308,23 @@ control MyIngress(inout headers hdr,
     action installSnapshot() {
         snapshot_timestamp.write((bit<32>)hdr.mySnapshot.queryID, hdr.mySnapshot.timestamp);
         snapshot_value.write((bit<32>)hdr.mySnapshot.queryID, 0);
+
+        // send back to forwarder
+        ctrl_addr = hdr.ipv4.srcAddr;
+        hdr.ipv4.srcAddr = hdr.ipv4.dstAddr;
+        hdr.ipv4.dstAddr = ctrl_addr;
+
+        ctrl_mac = hdr.ethernet.srcAddr;
+        hdr.ethernet.srcAddr = hdr.ethernet.dstAddr;
+        hdr.ethernet.dstAddr = ctrl_mac;
+
+        standard_metadata.egress_spec = standard_metadata.ingress_port;
+        
     }
 
     action aggregateInstallAck(ip4Addr_t aggregator_ip) {
         temp_aggregator_ip = aggregator_ip;
-    }
+    } 
 
     table snapshot_handler {
         key = {
@@ -452,17 +464,17 @@ control MyIngress(inout headers hdr,
                     snapshot_handler.apply();
                     // aggregate install ack
                     if (temp_aggregator_ip != 0) {
-                        last_seen_snapshot_seq.read(temp_timestamp, (bit<32>)aggr_query_id);
+                        last_seen_snapshot_seq.read(temp_timestamp, (bit<32>)hdr.mySnapshot.queryID);
                         if (temp_timestamp != hdr.mySnapshot.seq) {
                             acked_snapshot_seq_number.write((bit<32>)hdr.mySnapshot.queryID, 0);
-                            last_seen_snapshot_seq.write((bit<32>)hdr.mySnapshot.queryID, 0);
+                            last_seen_snapshot_seq.write((bit<32>)hdr.mySnapshot.queryID, hdr.mySnapshot.seq);
                         }
                         acked_snapshot_seq_number.read(seen_monNum, (bit<32>)hdr.mySnapshot.queryID);
                         acked_snapshot_seq_number.write((bit<32>)hdr.mySnapshot.queryID, seen_monNum+1);
 
                         check_snapshot_aggregate_satisfied.apply();
 
-                        if (total_monNum > 0 && seen_monNum >= total_monNum) {
+                        if (total_monNum > 0 && seen_monNum + 1 >= total_monNum) {
                             hdr.ipv4.srcAddr = temp_aggregator_ip;
                             acked_snapshot_seq_number.write((bit<32>)hdr.mySnapshot.queryID, 0);
                         } else  {
@@ -554,6 +566,7 @@ control MyDeparser(packet_out packet, in headers hdr) {
         packet.emit(hdr.ethernet);
         packet.emit(hdr.ipv4);
         packet.emit(hdr.myControl);
+        packet.emit(hdr.mySnapshot);
     }
 }
 
