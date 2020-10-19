@@ -62,7 +62,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     if isPoll:
         poll_pkt = Ether()/IP(src=LOCAL_IPADDR, proto=CTRL_PROTO)/ctrl_payload
     else:
-        poll_pkt = Ether()/IP(src=LOCAL_IPADDR, proto=CTRL_PROTO)/snapshot_payload
+        poll_pkt = Ether()/IP(src=LOCAL_IPADDR, proto=CTRL_SNAPSHOT)/snapshot_payload
 
     for mon_idx in range(len(destIP)):
         poll_pkt[Ether].dst = destMAC[mon_idx]
@@ -76,6 +76,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                     if fetched_timestamp[0] == Timestamp:
                         FETCH_SUCCESS = True
                         isCleanup = False
+                        isPoll = False
                         unpure_flags = struct.unpack('>B', bytes(reply[IP].payload)[2:3])
                         overflow_flags = (unpure_flags[0] & 0b10000000) >> 7
                         cleanup_flags = (unpure_flags[0] & 0b01000000) >> 6
