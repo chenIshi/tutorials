@@ -147,7 +147,7 @@ control MyIngress(inout headers hdr,
     register <bit <8>> (MAX_QUERY_ID) acked_monitor_number;
     /* last_seen_timestamp is used to detect retransmittion of controller */
     register <bit<16>> (MAX_QUERY_ID) last_seen_timestamp;
-    register <bit<16>> (MAX_QUERY_ID) snapshot_value;
+    register <bit<22>> (MAX_QUERY_ID) snapshot_value;
     register <timestamp_t> (MAX_QUERY_ID) snapshot_timestamp;
     register <bit<16>> (MAX_QUERY_ID) last_seen_snapshot_seq;
     register <bit <8>> (MAX_QUERY_ID) acked_snapshot_seq_number;
@@ -301,8 +301,8 @@ control MyIngress(inout headers hdr,
         default_action = NoAction();
     }
 
-    action markThenUnpack() {
-        standard_metadata.mcast_grp = 1;
+    action markThenUnpack(bit<16> mgrp) {
+        standard_metadata.mcast_grp = mgrp;
     }
 
     action installSnapshot() {
@@ -354,7 +354,7 @@ control MyIngress(inout headers hdr,
                 if (ipv4_count.apply().hit) {
                     snapshot_timestamp.read(temp_time, (bit<32>)data_plane_queryID);
                     // no snapshot taken yet
-                    if (temp_time > 0  && snapshotTaken < standard_metadata.ingress_global_timestamp) {
+                    if (temp_time > 0  && temp_time < standard_metadata.ingress_global_timestamp) {
                         snapshot_timestamp.write((bit<32>)data_plane_queryID, 0);
                         queryCounters.read(temp_snapshot, (bit<32>)data_plane_queryID);
                         // TODO: should minus 1 here, but currently  0 - 1 will cause overflow

@@ -177,7 +177,7 @@ def writeMonSnapshot(p4info_helper, switch, query_id, my_ip_addr):
     
     switch.WriteTableEntry(table_entry)
 
-def writeAggrSnapshot(p4info_helper, switch, query_id, my_ip_addr, controller_ip_addr):
+def writeAggrSnapshot(p4info_helper, switch, query_id, my_ip_addr, controller_ip_addr, mgrp):
     table_entry1 = p4info_helper.buildTableEntry(
         table_name="MyIngress.snapshot_handler",
         match_fields={
@@ -197,7 +197,7 @@ def writeAggrSnapshot(p4info_helper, switch, query_id, my_ip_addr, controller_ip
         },
         action_name="MyIngress.markThenUnpack",
         action_params={
-
+            "mgrp": mgrp,
         })
     
     switch.WriteTableEntry(table_entry1)
@@ -376,7 +376,7 @@ def main(p4info_file_path, bmv2_file_path):
 
         writeAggrDispatching(p4info_helper, switch=s4, my_ip_addr="10.1.4.4", queryID=1, mId=1, dst_ip_addr1="10.1.2.2", dst_ip_addr2="10.1.3.3", dport1=2, dport2=3)
         writeAggregating(p4info_helper, switch=s4, dst_ip_addr="10.0.1.1", queryID=1, my_ip_addr="10.1.4.4", total_monitor_number=2)
-        writeAggrSnapshot(p4info_helper, switch=s4, query_id=1, my_ip_addr="10.1.4.4", controller_ip_addr="10.0.1.1",)
+        writeAggrSnapshot(p4info_helper, switch=s4, query_id=1, my_ip_addr="10.1.4.4", controller_ip_addr="10.0.1.1", mgrp=1)
 
         # TODO Uncomment the following two lines to read table entries from s1 and s2
         readTableRules(p4info_helper, s2)

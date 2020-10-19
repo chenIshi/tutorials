@@ -9,7 +9,7 @@ LOCAL_IPADDR = "10.0.1.1"
 CTRL_PROTO = 0x9F
 CTRL_SNAPSHOT = 0xA0
 POLL_RETRIAL_MAXNUM = 6
-POLLING_NUMBER = 1000
+POLLING_NUMBER = 30
 RST_COUNTER_PERIOD = 10
 
 # MONITOR_NUMs_PER_QUERY = 2
@@ -43,7 +43,7 @@ class Snapshot_t(Packet):
 def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     global FETCH_SUCCESS
     global Timestamp
-    global isCleanup
+    global isCleanup, isPoll
 
     FETCH_SUCCESS = False
     if len(destMAC) != len(destIP):
@@ -68,7 +68,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
         poll_pkt[Ether].dst = destMAC[mon_idx]
         poll_pkt[IP].dst = destIP[mon_idx]
         
-        reply = srp1(poll_pkt, timeout=POLLING_PERIOD, verbose=0)
+        reply = srp1(poll_pkt, timeout=POLLING_PERIOD, verbose=1)
         if not (reply is None):
             if IP in reply:
                 if reply[IP].proto == CTRL_PROTO:
