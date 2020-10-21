@@ -19,7 +19,7 @@ isCleanup = False
 
 DEBUG=False
 
-InstalledSnapshotBeforeCleanup = True
+InstalledSnapshotBeforeCleanup = False
 
 # Control packet format
 # https://scapy.readthedocs.io/en/latest/build_dissect.html
@@ -60,15 +60,14 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     if repollNumber % RST_COUNTER_PERIOD == 0:
         # by default, if no response if recved, then it will be a cleanup next round
         isCleanup = True
-        InstalledSnapshotBeforeCleanup = False
 
     if isCleanup:
         ctrl_payload.flagCleanup = 1
     
-    if InstalledSnapshotBeforeCleanup:
-        poll_pkt = Ether()/IP(src=LOCAL_IPADDR, proto=CTRL_PROTO)/ctrl_payload
-    else:
+    if isCleanup and (not InstalledSnapshotBeforeCleanup):
         poll_pkt = Ether()/IP(src=LOCAL_IPADDR, proto=CTRL_SNAPSHOT)/snapshot_payload
+    else:
+        poll_pkt = Ether()/IP(src=LOCAL_IPADDR, proto=CTRL_PROTO)/ctrl_payload
 
     for mon_idx in range(len(destIP)):
         poll_pkt[Ether].dst = destMAC[mon_idx]
@@ -84,11 +83,15 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                     if fetched_timestamp[0] == Timestamp:
                         FETCH_SUCCESS = True
                         isCleanup = False
+                        InstalledSnapshotBeforeCleanup = False
                         unpure_flags = struct.unpack('>B', bytes(reply[IP].payload)[2:3])
                         overflow_flags = (unpure_flags[0] & 0b10000000) >> 7
                         cleanup_flags = (unpure_flags[0] & 0b01000000) >> 6
                         if overflow_flags == 1:
                             print("Overflowed!")
+                        if DEBUG:
+                            aggr_count = struct.unpack('>H', bytes(reply[IP].payload)[3:5])
+                            print("Fetched count = %d" % (aggr_count[0]))
                         # print("Polled %d" % (fetched_timestamp[0]))
                     else:
                         print("Get Wrong Timestamp %d instead of %d" % (fetched_timestamp[0], Timestamp))
@@ -96,6 +99,9 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                     fetched_seq = struct.unpack('>H', bytes(reply[IP].payload)[5:7])
                     if fetched_seq[0] == Timestamp:
                         InstalledSnapshotBeforeCleanup = True
+                        # print("Line 99: %d" % (fetched_seq[0]))
+                    # else:
+                        # print("Line 101: %d != %d" % (fetched_seq[0], Timestamp))
                 else:
                     print("Not a control / snapshot pkt")
             else:
