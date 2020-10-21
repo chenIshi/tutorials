@@ -8,7 +8,7 @@ const bit<8> TYPE_SNAPSHOT = 0x9E;
 const bit<32> MAX_QUERY_ID = 1 << 16;
 const bit<16> LOSS_PER_COUNT = 100;
 const bit<8> SNAPSHOT_DELAY = 2;
-const bit<8> SNAPSHOTS_ENTRY_NUMBER = 10;
+const bit<32> SNAPSHOTS_ENTRY_NUMBER = 8;
 
 const bit<32> I2E_CLONE_SESSION_ID = 5;
 
@@ -374,20 +374,21 @@ control MyIngress(inout headers hdr,
 
                 // count passed flow if query is assigned
                 if (ipv4_count.apply().hit) {
-                    timestamp_t myTimeZone = 0;
-                    timestamp_t lastTimeZone = 0;
+                    bit<8> myTimeZone = 0;
+                    bit<8> lastTimeZone = 0;
                     epoch_t myEpoch = 0;
                     epoch_t lastEpoch = 0;
                     snapshot_timestamp.read(temp_time, (bit<32>)data_plane_queryID);
-                    myTimeZone = (((timestamp_t)standard_metadata.ingress_global_timestamp - temp_time) / 100) % 10;
+                    myEpoch = (bit<8>)((timestamp_t)standard_metadata.ingress_global_timestamp - temp_time) >> 4;
+                    myTimeZone = (epoch_t)((timestamp_t)standard_metadata.ingress_global_timestamp - temp_time) << 4 >> 4;
                     last_timezone.read(lastTimeZone, 0);
                     // first packet within the timezone -> take a snapshot
-                    if (last_timezone != myTimeZone) {
+                    if (lastTimeZone != myTimeZone) {
                         last_timezone.write(0, myTimeZone);
-                        myEpoch = (epoch_t)((((timestamp_t)standard_metadata.ingress_global_timestamp - temp_time) / 100) / 10);
+                        // myEpoch = (epoch_t)((((timestamp_t)standard_metadata.ingress_global_timestamp - temp_time) >> 16) / 10);
                         queryCounters.read(temp_snapshot, (bit<32>)data_plane_queryID);
                         snapshot_wvalues.write((bit<32>)myTimeZone, temp_snapshot);
-                        snapshot_epoches.write(bit<32>)myTimeZone, myEpoch);
+                        snapshot_epoches.write((bit<32>)myTimeZone, myEpoch);
                         current_epoch.read(lastEpoch, 0);
                         if (lastEpoch < myEpoch) {
                             bit<22> temp_max_snapshot;
@@ -404,7 +405,6 @@ control MyIngress(inout headers hdr,
                         if (temp_time < truncated_current_time) {
                             snapshot_timestamp.write((bit<32>)data_plane_queryID, 0);
                             queryCounters.read(temp_snapshot, (bit<32>)data_plane_queryID);
-                            // TODO: should minus 1 here, but currently  0 - 1 will cause overflow
                             snapshot_value.write((bit<32>)data_plane_queryID, temp_snapshot);
                         }
                     }
@@ -428,12 +428,14 @@ control MyIngress(inout headers hdr,
                             // timestamp_t snapshotTaken = 0;
                             epoch_t target_epoch = 0;
                             epoch_t now_epoch;
-                            snapshot_epoches.read(target_epoch, (bit<32>hdr.myControl.snapshotID));
+                            snapshot_epoches.read(target_epoch, (bit<32>)hdr.myControl.snapshotID);
                             current_epoch.read(now_epoch, 0);
                             // consoled snapshot got the latest entry
                             if (target_epoch >= now_epoch) {
                                 snapshot_timestamp.write((bit<32>)hdr.myControl.queryID, 0);
                                 snapshot_wvalues.read(hdr.myControl.flowCount, (bit<32>)hdr.myControl.snapshotID);
+                                // TODO: remove this while it is only for debug
+                                snapshot_wvalues.write((bit<32>)hdr.myControl.snapshotID, hdr.myControl.flowCount + 2);
                                 // consoled snapshot is outdated
                             } else {
                                 bit<8> last_snapshotID;

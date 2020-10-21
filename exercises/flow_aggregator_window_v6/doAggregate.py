@@ -17,6 +17,8 @@ FETCH_SUCCESS = False
 Timestamp = 0
 isCleanup = False
 
+DEBUG=False
+
 isPoll = False
 
 # Control packet format
@@ -45,6 +47,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     global FETCH_SUCCESS
     global Timestamp
     global isCleanup, isPoll
+    global DEBUG
 
     FETCH_SUCCESS = False
     if len(destMAC) != len(destIP):
@@ -68,8 +71,10 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     for mon_idx in range(len(destIP)):
         poll_pkt[Ether].dst = destMAC[mon_idx]
         poll_pkt[IP].dst = destIP[mon_idx]
-        
-        reply = srp1(poll_pkt, timeout=POLLING_PERIOD, verbose=0)
+        verbose_print = 0
+        if DEBUG:
+            verbose_print = 1
+        reply = srp1(poll_pkt, timeout=POLLING_PERIOD, verbose=verbose_print)
         if not (reply is None):
             if IP in reply:
                 if reply[IP].proto == CTRL_PROTO:
@@ -96,6 +101,8 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                 print("Not a IP pkt")
 
 if __name__ == "__main__":
+    if DEBUG:
+        POLLING_NUMBER=50
     # TODO: add a while loop here (escape condition required though)
     for repoll in range(POLLING_NUMBER):
         # inactive phase
