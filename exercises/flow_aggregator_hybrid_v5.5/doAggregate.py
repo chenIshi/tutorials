@@ -17,7 +17,9 @@ FETCH_SUCCESS = False
 Timestamp = 0
 isCleanup = False
 
-isPoll = False
+DEBUG=False
+
+InstalledSnapshotBeforeCleanup = True
 
 # Control packet format
 # https://scapy.readthedocs.io/en/latest/build_dissect.html
@@ -43,7 +45,8 @@ class Snapshot_t(Packet):
 def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     global FETCH_SUCCESS
     global Timestamp
-    global isCleanup, isPoll
+    global isCleanup, InstalledSnapshotBeforeCleanup
+    global DEBUG
 
     FETCH_SUCCESS = False
     if len(destMAC) != len(destIP):
@@ -53,13 +56,16 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     ctrl_payload = Control_t(qid=qid, timestamp=Timestamp)
     snapshot_payload = Snapshot_t(qid=qid, seq=Timestamp)
 
-    '''
-    if isCleanup or repollNumber % RST_COUNTER_PERIOD == 0:
+    
+    if repollNumber % RST_COUNTER_PERIOD == 0:
         # by default, if no response if recved, then it will be a cleanup next round
         isCleanup = True
+        InstalledSnapshotBeforeCleanup = False
+
+    if isCleanup:
         ctrl_payload.flagCleanup = 1
-    '''
-    if isPoll:
+    
+    if InstalledSnapshotBeforeCleanup:
         poll_pkt = Ether()/IP(src=LOCAL_IPADDR, proto=CTRL_PROTO)/ctrl_payload
     else:
         poll_pkt = Ether()/IP(src=LOCAL_IPADDR, proto=CTRL_SNAPSHOT)/snapshot_payload
@@ -67,8 +73,10 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     for mon_idx in range(len(destIP)):
         poll_pkt[Ether].dst = destMAC[mon_idx]
         poll_pkt[IP].dst = destIP[mon_idx]
-        
-        reply = srp1(poll_pkt, timeout=POLLING_PERIOD, verbose=0)
+        verbose_print = 0
+        if DEBUG:
+            verbose_print = 1
+        reply = srp1(poll_pkt, timeout=POLLING_PERIOD, verbose=verbose_print)
         if not (reply is None):
             if IP in reply:
                 if reply[IP].proto == CTRL_PROTO:
@@ -76,7 +84,6 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                     if fetched_timestamp[0] == Timestamp:
                         FETCH_SUCCESS = True
                         isCleanup = False
-                        isPoll = False
                         unpure_flags = struct.unpack('>B', bytes(reply[IP].payload)[2:3])
                         overflow_flags = (unpure_flags[0] & 0b10000000) >> 7
                         cleanup_flags = (unpure_flags[0] & 0b01000000) >> 6
@@ -88,13 +95,15 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                 elif reply[IP].proto == CTRL_SNAPSHOT:
                     fetched_seq = struct.unpack('>H', bytes(reply[IP].payload)[5:7])
                     if fetched_seq[0] == Timestamp:
-                        isPoll = True
+                        InstalledSnapshotBeforeCleanup = True
                 else:
-                    print("Not a control pkt")
+                    print("Not a control / snapshot pkt")
             else:
                 print("Not a IP pkt")
 
 if __name__ == "__main__":
+    if DEBUG:
+        POLLING_NUMBER=50
     # TODO: add a while loop here (escape condition required though)
     for repoll in range(POLLING_NUMBER):
         # inactive phase

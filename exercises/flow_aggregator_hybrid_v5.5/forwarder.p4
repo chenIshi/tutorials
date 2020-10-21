@@ -373,6 +373,8 @@ control MyIngress(inout headers hdr,
                             queryCounters.read(temp_snapshot, (bit<32>)data_plane_queryID);
                             // TODO: should minus 1 here, but currently  0 - 1 will cause overflow
                             snapshot_value.write((bit<32>)data_plane_queryID, temp_snapshot);
+                            // cleanup the query counter
+                            queryCounters.write((bit<32>)hdr.myControl.queryID, 0);
                         }
                     }
                 }
@@ -391,15 +393,22 @@ control MyIngress(inout headers hdr,
                             standard_metadata.mcast_grp = 1;
                         // this is a monitor
                         } else if (isAskingForResponse == 2) {
-                            timestamp_t snapshotTaken = 0;
-                            snapshot_timestamp.read(snapshotTaken, (bit<32>)hdr.myControl.queryID);
-                            // no snapshot is taken
-                            if (snapshotTaken > 0) {
-                                snapshot_timestamp.write((bit<32>)hdr.myControl.queryID, 0);
-                                queryCounters.read(temp_snapshot, (bit<32>)hdr.myControl.queryID);
-                                snapshot_value.write((bit<32>)hdr.myControl.queryID, temp_snapshot);
+                            // only cleanup will need to read from snapshot
+                            if (hdr.myControl.flagCleanup == 1) {
+                                timestamp_t snapshotTaken = 0;
+                                snapshot_timestamp.read(snapshotTaken, (bit<32>)hdr.myControl.queryID);
+                                // no snapshot is taken
+                                if (snapshotTaken > 0) {
+                                    snapshot_timestamp.write((bit<32>)hdr.myControl.queryID, 0);
+                                    queryCounters.read(temp_snapshot, (bit<32>)hdr.myControl.queryID);
+                                    snapshot_value.write((bit<32>)hdr.myControl.queryID, temp_snapshot);
+                                    // cleanup the counter
+                                    queryCounters.write((bit<32>)hdr.myControl.queryID, 0);
+                                }
+                                snapshot_value.read(reg_count, (bit<32>)hdr.myControl.queryID);
+                            } else {
+                                queryCounters.read(reg_count, (bit<32>)hdr.myControl.queryID); 
                             }
-                            snapshot_value.read(reg_count, (bit<32>)hdr.myControl.queryID);
                             /* TODO: delete + 2 here (only for debugging)*/
                             hdr.myControl.flowCount = reg_count + 2;
                             queryCounters.write((bit<32>)hdr.myControl.queryID, reg_count + 2);
@@ -414,12 +423,6 @@ control MyIngress(inout headers hdr,
                             hdr.ethernet.dstAddr= ctrl_mac;
 
                             standard_metadata.egress_spec=standard_metadata.ingress_port;
-
-                            /* check if the controller want to  cleanup counter */
-                            if (hdr.myControl.flagCleanup == 1) {
-                                queryCounters.write((bit<32>)hdr.myControl.queryID, 0);
-                            }
-
                         }
                     }
                     // do aggregate
