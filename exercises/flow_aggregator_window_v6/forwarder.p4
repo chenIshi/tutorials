@@ -34,6 +34,7 @@ typedef bit<9>  egressSpec_t;
 typedef bit<48> macAddr_t;
 typedef bit<32> ip4Addr_t;
 typedef bit<24> timestamp_t;
+typedef bit<8> epoch_t;
 
 header ethernet_t {
     macAddr_t dstAddr;
@@ -62,6 +63,7 @@ header myControl_t {
     bit <1> flagCleanup;
     bit<22> flowCount;
     bit<16> timestamp;
+    bit <8> snapshotID;
 }
 
 header mySnapshot_t {
@@ -148,10 +150,17 @@ control MyIngress(inout headers hdr,
     register <bit <8>> (MAX_QUERY_ID) acked_monitor_number;
     /* last_seen_timestamp is used to detect retransmittion of controller */
     register <bit<16>> (MAX_QUERY_ID) last_seen_timestamp;
-    register <bit<22>> (MAX_QUERY_ID) snapshot_value;
+    // register <bit<22>> (MAX_QUERY_ID) snapshot_value;
     register <timestamp_t> (MAX_QUERY_ID) snapshot_timestamp;
     register <bit<16>> (MAX_QUERY_ID) last_seen_snapshot_seq;
     register <bit <8>> (MAX_QUERY_ID) acked_snapshot_seq_number;
+
+    register <bit<22>> (SNAPSHOTS_ENTRY_NUMBER) snapshot_wvalues;
+    register <epoch_t> (SNAPSHOTS_ENTRY_NUMBER) snapshot_epoches;
+    register <epoch_t> (1) current_epoch;
+    register <bit<8>> (1) last_timezone;
+    register <bit<22>> (1) previous_epoch_max_snapshot;
+    register <bit<22>> (1) current_epoch_max_snapshot;
 
     register <bit<16>> (1) loss_counter;
 
@@ -308,7 +317,7 @@ control MyIngress(inout headers hdr,
 
     action installSnapshot() {
         snapshot_timestamp.write((bit<32>)hdr.mySnapshot.queryID, hdr.mySnapshot.timestamp);
-        snapshot_value.write((bit<32>)hdr.mySnapshot.queryID, 0);
+        /* snapshot_value.write((bit<32>)hdr.mySnapshot.queryID, 0); */
 
         // send back to forwarder
         ctrl_addr = hdr.ipv4.srcAddr;
@@ -365,8 +374,31 @@ control MyIngress(inout headers hdr,
 
                 // count passed flow if query is assigned
                 if (ipv4_count.apply().hit) {
+                    timestamp_t myTimeZone = 0;
+                    timestamp_t lastTimeZone = 0;
+                    epoch_t myEpoch = 0;
+                    epoch_t lastEpoch = 0;
                     snapshot_timestamp.read(temp_time, (bit<32>)data_plane_queryID);
+                    myTimeZone = (((timestamp_t)standard_metadata.ingress_global_timestamp - temp_time) / 100) % 10;
+                    last_timezone.read(lastTimeZone, 0);
+                    // first packet within the timezone -> take a snapshot
+                    if (last_timezone != myTimeZone) {
+                        last_timezone.write(0, myTimeZone);
+                        myEpoch = (epoch_t)((((timestamp_t)standard_metadata.ingress_global_timestamp - temp_time) / 100) / 10);
+                        queryCounters.read(temp_snapshot, (bit<32>)data_plane_queryID);
+                        snapshot_wvalues.write((bit<32>)myTimeZone, temp_snapshot);
+                        snapshot_epoches.write(bit<32>)myTimeZone, myEpoch);
+                        current_epoch.read(lastEpoch, 0);
+                        if (lastEpoch < myEpoch) {
+                            bit<22> temp_max_snapshot;
+                            current_epoch_max_snapshot.read(temp_max_snapshot, 0);
+                            previous_epoch_max_snapshot.write(0, temp_max_snapshot);
+                            current_epoch.write(0, myEpoch);
+                        }
+                        current_epoch_max_snapshot.write(0, temp_snapshot);
+                    }
                     // no snapshot taken yet
+                    /*
                     if (temp_time > 0) {
                         timestamp_t truncated_current_time = (timestamp_t)standard_metadata.ingress_global_timestamp;
                         if (temp_time < truncated_current_time) {
@@ -376,6 +408,7 @@ control MyIngress(inout headers hdr,
                             snapshot_value.write((bit<32>)data_plane_queryID, temp_snapshot);
                         }
                     }
+                    */
                 }
 
                 // if it is a control plane packet
@@ -392,18 +425,37 @@ control MyIngress(inout headers hdr,
                             standard_metadata.mcast_grp = 1;
                         // this is a monitor
                         } else if (isAskingForResponse == 2) {
-                            timestamp_t snapshotTaken = 0;
-                            snapshot_timestamp.read(snapshotTaken, (bit<32>)hdr.myControl.queryID);
-                            // no snapshot is taken
-                            if (snapshotTaken > 0) {
+                            // timestamp_t snapshotTaken = 0;
+                            epoch_t target_epoch = 0;
+                            epoch_t now_epoch;
+                            snapshot_epoches.read(target_epoch, (bit<32>hdr.myControl.snapshotID));
+                            current_epoch.read(now_epoch, 0);
+                            // consoled snapshot got the latest entry
+                            if (target_epoch >= now_epoch) {
                                 snapshot_timestamp.write((bit<32>)hdr.myControl.queryID, 0);
-                                queryCounters.read(temp_snapshot, (bit<32>)hdr.myControl.queryID);
-                                snapshot_value.write((bit<32>)hdr.myControl.queryID, temp_snapshot);
+                                snapshot_wvalues.read(hdr.myControl.flowCount, (bit<32>)hdr.myControl.snapshotID);
+                                // consoled snapshot is outdated
+                            } else {
+                                bit<8> last_snapshotID;
+                                last_timezone.read(last_snapshotID, 0);
+                                if (hdr.myControl.snapshotID >= last_snapshotID) {
+                                    current_epoch_max_snapshot.read(hdr.myControl.flowCount, 0);
+                                    // TODO: remove this while it is only for debug
+                                    current_epoch_max_snapshot.write(0, hdr.myControl.flowCount + 2);
+                                } else {
+                                    previous_epoch_max_snapshot.read(hdr.myControl.flowCount, 0);
+                                    // TODO: remove this while it is only for debug
+                                    previous_epoch_max_snapshot.write(0, hdr.myControl.flowCount + 2);
+                                }
                             }
+                            /*
                             snapshot_value.read(reg_count, (bit<32>)hdr.myControl.queryID);
+                            */
                             /* TODO: delete + 2 here (only for debugging)*/
+                            /*
                             hdr.myControl.flowCount = reg_count + 2;
                             queryCounters.write((bit<32>)hdr.myControl.queryID, reg_count + 2);
+                            */
 
                             /* send back to controller */
                             ctrl_addr = hdr.ipv4.srcAddr;

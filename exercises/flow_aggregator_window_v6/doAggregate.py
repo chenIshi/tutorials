@@ -28,7 +28,8 @@ class Control_t(Packet):
         BitField("flagOverflow", 0, 1),
         BitField("flagCleanup", 0, 1),
         BitField("count", 0, 22),
-        ShortField("timestamp", 0)
+        ShortField("timestamp", 0),
+        XByteField("snapshotID", 0)
 ]
 
 class Snapshot_t(Packet):
@@ -50,7 +51,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
         return
     
     # mcast to monitors
-    ctrl_payload = Control_t(qid=qid, timestamp=Timestamp)
+    ctrl_payload = Control_t(qid=qid, timestamp=Timestamp, snapshotID=1)
     snapshot_payload = Snapshot_t(qid=qid, seq=Timestamp)
 
     '''
@@ -76,7 +77,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                     if fetched_timestamp[0] == Timestamp:
                         FETCH_SUCCESS = True
                         isCleanup = False
-                        isPoll = False
+                        # isPoll = False
                         unpure_flags = struct.unpack('>B', bytes(reply[IP].payload)[2:3])
                         overflow_flags = (unpure_flags[0] & 0b10000000) >> 7
                         cleanup_flags = (unpure_flags[0] & 0b01000000) >> 6
