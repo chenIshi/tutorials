@@ -30,6 +30,7 @@ const bit<32> BMV2_V1MODEL_INSTANCE_TYPE_RESUBMIT      = 6;
 typedef bit<9>  egressSpec_t;
 typedef bit<48> macAddr_t;
 typedef bit<32> ip4Addr_t;
+typedef bit<16> seq_t;
 
 header ethernet_t {
     macAddr_t dstAddr;
@@ -57,7 +58,7 @@ header myControl_t {
     bit <1> flagOverflow;
     bit <1> flagCleanup;
     bit<22> flowCount;
-    bit<16> timestamp;
+    seq_t seq;
 }
 
 struct metadata {
@@ -127,10 +128,10 @@ control MyIngress(inout headers hdr,
     // p416 doesn't allow to read counter in data plane
     // queryCounter store querycount in both monitor and aggregator
     register<bit<22>>(MAX_QUERY_ID) queryCounters;
-    /* Both acked_monitor_number and last_seen_timestamp is for aggregator*/
+    /* Both acked_monitor_number and last_seen_seq is for aggregator*/
     register <bit <8>> (MAX_QUERY_ID) acked_monitor_number;
-    /* last_seen_timestamp is used to detect retransmittion of controller */
-    register <bit<16>> (MAX_QUERY_ID) last_seen_timestamp;
+    /* last_seen_seq is used to detect retransmittion of controller */
+    register <seq_t> (MAX_QUERY_ID) last_seen_seq;
 
     register <bit<16>> (1) loss_counter;
 
@@ -151,7 +152,7 @@ control MyIngress(inout headers hdr,
 
     bit <8> seen_monNum;
     bit <8> total_monNum = 0;
-    bit <16> temp_timestamp;
+    seq_t temp_seq;
     bit <22> temp_count;
     ip4Addr_t temp_aggregator_ip = 0;
 
@@ -326,11 +327,11 @@ control MyIngress(inout headers hdr,
                     }
                     // do aggregate
                     if (aggr_query_id > 0) {
-                        last_seen_timestamp.read(temp_timestamp, (bit<32>)aggr_query_id);
-                        if (temp_timestamp != hdr.myControl.timestamp) {
+                        last_seen_seq.read(temp_seq, (bit<32>)aggr_query_id);
+                        if (temp_seq != hdr.myControl.seq) {
                             queryCounters.write((bit<32>)aggr_query_id, 0);
                             acked_monitor_number.write((bit<32>)aggr_query_id, 0);
-                            last_seen_timestamp.write((bit<32>)aggr_query_id, hdr.myControl.timestamp);
+                            last_seen_seq.write((bit<32>)aggr_query_id, hdr.myControl.seq);
                         }
 
                         queryCounters.read(temp_count, (bit<32>)aggr_query_id);

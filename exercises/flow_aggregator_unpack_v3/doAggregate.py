@@ -25,7 +25,7 @@ class Control_t(Packet):
         BitField("flagOverflow", 0, 1),
         BitField("flagCleanup", 0, 1),
         BitField("count", 0, 22),
-        ShortField("timestamp", 0)
+        ShortField("seq", 0)
 ]
 
 # can improve with rev-aggr maybe
@@ -39,7 +39,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
         return
     
     # mcast to monitors
-    ctrl_payload = Control_t(qid=qid, timestamp=Timestamp)
+    ctrl_payload = Control_t(qid=qid, seq=Timestamp)
 
     if isCleanup or repollNumber % RST_COUNTER_PERIOD == 0:
         # by default, if no response if recved, then it will be a cleanup next round
@@ -67,7 +67,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                             print("Overflowed!")
                         # print("Polled %d" % (fetched_timestamp[0]))
                     else:
-                        print("Get Wrong Timestamp %d instead of %d" % (fetched_timestamp[0], Timestamp))
+                        print("Get Wrong Seq %d instead of %d" % (fetched_timestamp[0], Timestamp))
                 else:
                     print("Not a control pkt")
             else:
