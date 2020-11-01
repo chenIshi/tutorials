@@ -8,6 +8,7 @@ POLLING_PERIOD = 0.05
 LOCAL_IPADDR = "10.0.1.1"
 CTRL_PROTO = 0x9F
 CTRL_SNAPSHOT = 0x9E
+CTRL_SIGNAL = 0x9D
 POLL_RETRIAL_MAXNUM = 6
 POLLING_NUMBER = 1000
 RST_COUNTER_PERIOD = 10
@@ -37,6 +38,12 @@ class Snapshot_t(Packet):
         ShortField("qid", 0),
         BitField("timestamp", 0, 24),
         ShortField("seq", 0)
+]
+
+class Signal_t(Packet):
+    name = "Signal_t "
+    fields_desc = [     
+        XByteField("synack", 0)
 ]
 
 # can improve with rev-aggr maybe
@@ -82,7 +89,6 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                         cleanup_flags = (unpure_flags[0] & 0b01000000) >> 6
                         if overflow_flags == 1:
                             print("Overflowed!")
-                        # print("Polled %d" % (fetched_timestamp[0]))
                     else:
                         print("Get Wrong Timestamp %d instead of %d" % (fetched_timestamp[0], Timestamp))
                 elif reply[IP].proto == CTRL_SNAPSHOT:
@@ -95,7 +101,17 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                 print("Not a IP pkt")
 
 if __name__ == "__main__":
-    # TODO: add a while loop here (escape condition required though)
+    signal_payload = Signal_t(synack=0x2)
+
+    signal_pkt = Ether()/IP(src=LOCAL_IPADDR, proto=CTRL_SIGNAL)/signal_payload
+    signal_pkt[Ether].dst = "08:00:00:00:04:44"
+    signal_pkt[IP].dst = "10.1.4.4"
+
+    signal_response = srp1(signal_pkt, timeout=POLLING_PERIOD, verbose=0)
+    if signal_response is None:
+        print("No starting signal back")
+        exit(1)
+
     for repoll in range(POLLING_NUMBER):
         # inactive phase
         time.sleep(POLLING_PERIOD)
