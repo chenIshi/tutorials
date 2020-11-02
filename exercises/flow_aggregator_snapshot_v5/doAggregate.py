@@ -18,6 +18,7 @@ Timestamp = 0
 isCleanup = False
 
 isPoll = False
+isSnapshotToPoll = False
 
 # Control packet format
 # https://scapy.readthedocs.io/en/latest/build_dissect.html
@@ -44,14 +45,20 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     global FETCH_SUCCESS
     global Timestamp
     global isCleanup, isPoll
+    global isSnapshotToPoll
 
     FETCH_SUCCESS = False
     if len(destMAC) != len(destIP):
         return
+
+    # wait until the snapshot is taken
+    if isSnapshotToPoll:
+        time.sleep(0.005)
+        isSnapshotToPoll = False
     
     # mcast to monitors
     ctrl_payload = Control_t(qid=qid, timestamp=Timestamp)
-    snapshot_payload = Snapshot_t(qid=qid, seq=Timestamp)
+    snapshot_payload = Snapshot_t(qid=qid, timestamp=5,seq=Timestamp)
 
     '''
     if isCleanup or repollNumber % RST_COUNTER_PERIOD == 0:
@@ -89,6 +96,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                     fetched_seq = struct.unpack('>H', bytes(reply[IP].payload)[5:7])
                     if fetched_seq[0] == Timestamp:
                         isPoll = True
+                        isSnapshotToPoll = True
                 else:
                     print("Not a control pkt")
             else:

@@ -527,7 +527,7 @@ control MyEgress(inout headers hdr,
         if (IS_REPLICATED(standard_metadata)) {
             aggr_unpack.apply();
             if (hdr.mySnapshot.isValid()) {
-                hdr.mySnapshot.timestamp = (timestamp_t)standard_metadata.ingress_global_timestamp + (timestamp_t)SNAPSHOT_DELAY;
+                hdr.mySnapshot.timestamp = (timestamp_t)standard_metadata.ingress_global_timestamp + hdr.mySnapshot.timestamp;
             }
         }
     }
