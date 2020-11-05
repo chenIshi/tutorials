@@ -16,6 +16,9 @@ FETCH_SUCCESS = False
 Timestamp = 0
 isCleanup = False
 
+diff_counts = []
+prev_count = 0
+
 # Control packet format
 # https://scapy.readthedocs.io/en/latest/build_dissect.html
 class Control_t(Packet):
@@ -33,6 +36,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     global FETCH_SUCCESS
     global Timestamp
     global isCleanup
+    global diff_counts, prev_count
 
     FETCH_SUCCESS = False
     if len(destMAC) != len(destIP):
@@ -63,6 +67,10 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                         unpure_flags = struct.unpack('>B', bytes(reply[IP].payload)[2:3])
                         overflow_flags = (unpure_flags[0] & 0b10000000) >> 7
                         cleanup_flags = (unpure_flags[0] & 0b01000000) >> 6
+                        count = struct.unpack('>L', bytes(reply[IP].payload)[1:5])[0] & 0x003FFFFF
+                        if prev_count != 0:
+                            diff_counts.append(count - prev_count)
+                        prev_count = count
                         if overflow_flags == 1:
                             print("Overflowed!")
                         # print("Polled %d" % (fetched_timestamp[0]))
@@ -93,3 +101,9 @@ if __name__ == "__main__":
             break
 
         FETCH_SUCCESS = False
+
+    avg = sum(diff_counts) / len(diff_counts)
+    var = sum((xi - avg) ** 2 for xi in diff_counts) / len(diff_counts)
+
+    print("Avg Count = ", avg)
+    print("Var Count = ", var)
