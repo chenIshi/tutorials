@@ -48,6 +48,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     global Timestamp
     global isCleanup, isPoll
     global isSnapshotToPoll
+    global counts
 
     FETCH_SUCCESS = False
     if len(destMAC) != len(destIP):
@@ -89,7 +90,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                         unpure_flags = struct.unpack('>B', bytes(reply[IP].payload)[2:3])
                         overflow_flags = (unpure_flags[0] & 0b10000000) >> 7
                         cleanup_flags = (unpure_flags[0] & 0b01000000) >> 6
-                        count = struct.unpack('>L', bytes(reply[IP].payload)[2:3])[0] & 0b00111111
+                        count = struct.unpack('>L', bytes(reply[IP].payload)[1:5])[0] & 0x003FFFFF
                         counts.append(count)
                         if overflow_flags == 1:
                             print("Overflowed!")
