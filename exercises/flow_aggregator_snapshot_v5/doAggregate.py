@@ -11,6 +11,7 @@ CTRL_SNAPSHOT = 0x9E
 POLL_RETRIAL_MAXNUM = 6
 POLLING_NUMBER = 1000
 RST_COUNTER_PERIOD = 10
+EXPECT_DIFF_COUNT = 50
 
 # MONITOR_NUMs_PER_QUERY = 2
 FETCH_SUCCESS = False
@@ -93,7 +94,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                         cleanup_flags = (unpure_flags[0] & 0b01000000) >> 6
                         count = struct.unpack('>L', bytes(reply[IP].payload)[1:5])[0] & 0x003FFFFF
                         if prev_count != 0:
-                            diff_counts.append(count - prev_count)
+                            diff_counts.append(count - prev_count - EXPECT_DIFF_COUNT)
                         prev_count = count
                         if overflow_flags == 1:
                             print("Overflowed!")

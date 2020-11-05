@@ -21,7 +21,7 @@ This will make a mininet environment with BMv2 switches for you, with an interac
 
 This setups the control plane of BMv2 swithes all at the same time, via the p4runtime tool.
 
-> h2 ping h3 -w 300 -i 0.05 -q &
+> h2 ping h3 -w 300 -i 0.01 -q &
 
 You might need to establish some background pinging flow
 
