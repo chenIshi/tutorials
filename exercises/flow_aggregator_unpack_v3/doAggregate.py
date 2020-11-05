@@ -19,6 +19,8 @@ isCleanup = False
 diff_counts = []
 prev_count = 0
 
+counts = []
+
 # Control packet format
 # https://scapy.readthedocs.io/en/latest/build_dissect.html
 class Control_t(Packet):
@@ -37,6 +39,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     global Timestamp
     global isCleanup
     global diff_counts, prev_count
+    global counts
 
     FETCH_SUCCESS = False
     if len(destMAC) != len(destIP):
@@ -45,11 +48,12 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     # mcast to monitors
     ctrl_payload = Control_t(qid=qid, seq=Timestamp)
 
+    '''
     if isCleanup or repollNumber % RST_COUNTER_PERIOD == 0:
         # by default, if no response if recved, then it will be a cleanup next round
         isCleanup = True
         ctrl_payload.flagCleanup = 1
-
+    '''
     poll_pkt = Ether()/IP(src=LOCAL_IPADDR, proto=CTRL_PROTO)/ctrl_payload
 
     for mon_idx in range(len(destIP)):
@@ -71,6 +75,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                         if prev_count != 0:
                             diff_counts.append(count - prev_count)
                         prev_count = count
+                        counts.append(count)
                         if overflow_flags == 1:
                             print("Overflowed!")
                         # print("Polled %d" % (fetched_timestamp[0]))
@@ -102,8 +107,15 @@ if __name__ == "__main__":
 
         FETCH_SUCCESS = False
 
-    avg = sum(diff_counts) / len(diff_counts)
-    var = sum((xi - avg) ** 2 for xi in diff_counts) / len(diff_counts)
+    print("avg count = ", sum(counts) / len(counts))
 
-    print("Avg Count = ", avg)
-    print("Var Count = ", var)
+    if sum(diff_counts) != 0 and len(diff_counts) > 0:
+        avg = sum(diff_counts) / len(diff_counts)
+        var = sum((xi - avg) ** 2 for xi in diff_counts) / len(diff_counts)
+
+        print("Avg Count = ", avg)
+        print("Var Count = ", var)
+    elif len(diff_counts) <= 0:
+        print("diff count len <= 0!")
+    elif sum(diff_counts) == 0:
+        print("diff count sum = 0!")

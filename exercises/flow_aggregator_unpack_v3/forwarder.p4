@@ -304,8 +304,8 @@ control MyIngress(inout headers hdr,
                         } else if (isAskingForResponse == 2) {
                             queryCounters.read(reg_count, (bit<32>)hdr.myControl.queryID);
                             /* TODO: delete + 2 here (only for debugging)*/
-                            hdr.myControl.flowCount = reg_count + 2;
-                            queryCounters.write((bit<32>)hdr.myControl.queryID, reg_count + 2);
+                            hdr.myControl.flowCount = reg_count;
+                            // queryCounters.write((bit<32>)hdr.myControl.queryID, reg_count + 2);
 
                             /* send back to controller */
                             ctrl_addr = hdr.ipv4.srcAddr;
