@@ -529,7 +529,7 @@ control MyEgress(inout headers hdr,
             
             if (hdr.mySnapshot.isValid()) {
                 if (hdr.mySnapshot.timestamp == 0) {
-                    hdr.mySnapshot.timestamp = (timestamp_t)standard_metadata.ingress_global_timestamp + 50;
+                    hdr.mySnapshot.timestamp = (timestamp_t)standard_metadata.ingress_global_timestamp + 20;
                 }
             }
             

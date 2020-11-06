@@ -2,6 +2,7 @@
 from scapy.all import *
 import time
 import struct
+import datetime
 
 # time period for trigger a poll event (ms)
 POLLING_PERIOD = 0.05
@@ -25,6 +26,10 @@ isSnapshotToPoll = False
 
 diff_counts = []
 prev_count = 0
+
+polling_time = 0
+installing_time = 0
+start_time = None
 
 # Control packet format
 # https://scapy.readthedocs.io/en/latest/build_dissect.html
@@ -54,6 +59,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     global isSnapshotToPoll
     global diff_counts, prev_count
     global lastTimestamp
+    global installing_time, start_time
 
     FETCH_SUCCESS = False
     if len(destMAC) != len(destIP):
@@ -61,7 +67,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
 
     # wait until the snapshot is taken
     if isSnapshotToPoll:
-        time.sleep(0.05)
+        time.sleep(0.02 - installing_time)
         isSnapshotToPoll = False
     
     # mcast to monitors
@@ -70,7 +76,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     if lastTimestamp == 0:
         snapshot_payload.timestamp = 0
     else:
-        snapshot_payload.timestamp = lastTimestamp + 50
+        snapshot_payload.timestamp = lastTimestamp + 20
 
     '''
     if isCleanup or repollNumber % RST_COUNTER_PERIOD == 0:
@@ -114,6 +120,12 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                         isPoll = True
                         isSnapshotToPoll = True
                         lastTimestamp = struct.unpack('>L', bytes(reply[IP].payload)[1:5])[0] & 0x00FFFFFF
+                        if not(start_time is None):
+                            end_time = datetime.datetime.now()
+                            time_diff = (end_time - start_time)
+                            installing_time = time_diff.total_seconds()
+                            if installing_time > 0.02:
+                                installing_time = 0.02
                 else:
                     print("Not a control pkt")
             else:
@@ -123,7 +135,8 @@ if __name__ == "__main__":
     # TODO: add a while loop here (escape condition required though)
     for repoll in range(POLLING_NUMBER):
         # inactive phase
-        time.sleep(POLLING_PERIOD)
+        time.sleep(POLLING_PERIOD - polling_time)
+        start_time = datetime.datetime.now()
         # active phase
         retrial_times = 0
         while (not FETCH_SUCCESS) and (retrial_times < POLL_RETRIAL_MAXNUM):
@@ -137,6 +150,12 @@ if __name__ == "__main__":
             else:
                 print("Retransmittion failed in time %d" % (repoll))
             break
+        elif FETCH_SUCCESS:
+            end_time = datetime.datetime.now()
+            time_diff = (end_time - start_time)
+            polling_time = time_diff.total_seconds()
+            if polling_time > POLLING_PERIOD:
+                polling_time = POLLING_PERIOD
 
         FETCH_SUCCESS = False
 
