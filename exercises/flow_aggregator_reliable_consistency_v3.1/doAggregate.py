@@ -30,8 +30,8 @@ class Control_t(Packet):
         BitField("flagCleanup", 0, 1),
         BitField("count", 0, 22),
         ShortField("seq", 0),
-        ShortField("timestampA", 0),
-        ShortField("timestampB", 0)
+        BitField("timestampA", 0, 32),
+        BitField("timestampB", 0, 32)
 ]
 
 # can improve with rev-aggr maybe
@@ -71,8 +71,8 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                         unpure_flags = struct.unpack('>B', bytes(reply[IP].payload)[2:3])
                         overflow_flags = (unpure_flags[0] & 0b10000000) >> 7
                         cleanup_flags = (unpure_flags[0] & 0b01000000) >> 6
-                        timestampA = struct.unpack('>H', bytes(reply[IP].payload)[7:9])[0]
-                        timestampB = struct.unpack('>H', bytes(reply[IP].payload)[9:11])[0]
+                        timestampA = struct.unpack('>L', bytes(reply[IP].payload)[7:11])[0]
+                        timestampB = struct.unpack('>L', bytes(reply[IP].payload)[11:15])[0]
                         if last_timestampA != 0 and last_timestampB != 0 and timestampA != 0 and timestampB != 0:
                             diff_counts.append(timestampA - last_timestampA + timestampB - last_timestampB)
                         last_timestampA = timestampA
@@ -110,7 +110,7 @@ if __name__ == "__main__":
 
     if sum(diff_counts) != 0 and len(diff_counts) > 0:
         avg = sum(diff_counts) / float(len(diff_counts))
-        var = sum((xi - avg) ** 2 for xi in diff_counts) / float(len(diff_counts))
+        var = (sum((xi - avg) ** 2 for xi in diff_counts) / float(len(diff_counts))) ** 0.5
 
         print("Avg Count = ", avg)
         print("Var Count = ", var)

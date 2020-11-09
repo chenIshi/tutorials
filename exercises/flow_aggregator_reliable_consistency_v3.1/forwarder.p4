@@ -59,8 +59,8 @@ header myControl_t {
     bit <1> flagCleanup;
     bit<22> flowCount;
     seq_t seq;
-    bit <16> timestampA;
-    bit <16> timestampB;
+    bit <32> timestampA;
+    bit <32> timestampB;
 }
 
 struct metadata {
@@ -135,7 +135,7 @@ control MyIngress(inout headers hdr,
     /* last_seen_seq is used to detect retransmittion of controller */
     register <seq_t> (MAX_QUERY_ID) last_seen_seq;
 
-    register <bit<16>> (1) temp_timestamp;
+    register <bit<32>> (1) temp_timestamp;
     register <bit<16>> (1) loss_counter;
 
     /* reg_count acted as buffer
@@ -272,11 +272,11 @@ control MyIngress(inout headers hdr,
     }
 
     action record_first_timestamp() {
-        hdr.myControl.timestampA = (bit<16>)standard_metadata.ingress_global_timestamp;
+        hdr.myControl.timestampA = (bit<32>)standard_metadata.ingress_global_timestamp;
     }
 
     action record_second_timestamp() {
-        hdr.myControl.timestampB = (bit<16>)standard_metadata.ingress_global_timestamp;
+        hdr.myControl.timestampB = (bit<32>)standard_metadata.ingress_global_timestamp;
     }
 
     table console_reponse_timestamp {
