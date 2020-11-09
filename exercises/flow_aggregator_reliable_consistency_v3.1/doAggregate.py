@@ -71,8 +71,8 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                         unpure_flags = struct.unpack('>B', bytes(reply[IP].payload)[2:3])
                         overflow_flags = (unpure_flags[0] & 0b10000000) >> 7
                         cleanup_flags = (unpure_flags[0] & 0b01000000) >> 6
-                        timestampA = struct.unpack('>B', bytes(reply[IP].payload)[7:9])[0]
-                        timestampB = struct.unpack('>B', bytes(reply[IP].payload)[9:11])[0]
+                        timestampA = struct.unpack('>H', bytes(reply[IP].payload)[7:9])[0]
+                        timestampB = struct.unpack('>H', bytes(reply[IP].payload)[9:11])[0]
                         if last_timestampA != 0 and last_timestampB != 0 and timestampA != 0 and timestampB != 0:
                             diff_counts.append(timestampA - last_timestampA + timestampB - last_timestampB)
                         last_timestampA = timestampA

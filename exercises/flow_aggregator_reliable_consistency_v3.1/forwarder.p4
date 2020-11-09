@@ -331,6 +331,8 @@ control MyIngress(inout headers hdr,
                             hdr.myControl.flowCount = reg_count;
                             // queryCounters.write((bit<32>)hdr.myControl.queryID, reg_count + 2);
 
+                            console_reponse_timestamp.apply();
+
                             /* send back to controller */
                             ctrl_addr = hdr.ipv4.srcAddr;
                             hdr.ipv4.srcAddr = hdr.ipv4.dstAddr;
