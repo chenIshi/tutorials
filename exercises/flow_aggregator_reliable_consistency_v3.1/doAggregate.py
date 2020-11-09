@@ -5,7 +5,7 @@ import struct
 import datetime
 
 # time period for trigger a poll event (ms)
-POLLING_PERIOD = 0.05
+POLLING_PERIOD = 0.1
 LOCAL_IPADDR = "10.0.1.1"
 CTRL_PROTO = 0x9F
 POLL_RETRIAL_MAXNUM = 6
@@ -20,6 +20,8 @@ isCleanup = False
 diff_counts = []
 last_timestampA = 0
 last_timestampB = 0
+
+diff_mons = []
 
 polling_time = 0
 
@@ -42,7 +44,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     global FETCH_SUCCESS
     global Timestamp
     global isCleanup
-    global diff_counts, last_timestampA, last_timestampB
+    global diff_counts, last_timestampA, last_timestampB, diff_mons
 
     FETCH_SUCCESS = False
     if len(destMAC) != len(destIP):
@@ -76,8 +78,9 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                         cleanup_flags = (unpure_flags[0] & 0b01000000) >> 6
                         timestampA = struct.unpack('>L', bytes(reply[IP].payload)[7:11])[0]
                         timestampB = struct.unpack('>L', bytes(reply[IP].payload)[11:15])[0]
-                        if last_timestampA != 0 and last_timestampB != 0 and timestampA != 0 and timestampB != 0:
-                            diff_counts.append(timestampA - last_timestampA + timestampB - last_timestampB)
+                        if last_timestampA > 0 and last_timestampB > 0 and timestampA > last_timestampA and timestampB > last_timestampB:
+                            diff_counts.append((timestampA - last_timestampA + timestampB - last_timestampB) / float(2))
+                            diff_mons.append(timestampA - timestampB)
                         last_timestampA = timestampA
                         last_timestampB = timestampB
                         if overflow_flags == 1:
@@ -119,12 +122,24 @@ if __name__ == "__main__":
         FETCH_SUCCESS = False
 
     if sum(diff_counts) != 0 and len(diff_counts) > 0:
-        avg = sum(diff_counts) / float(len(diff_counts))
-        var = (sum((xi - avg) ** 2 for xi in diff_counts) / float(len(diff_counts))) ** 0.5
+        count_avg = sum(diff_counts) / float(len(diff_counts))
+        count_var = (sum((xi - count_avg) ** 2 for xi in diff_counts) / float(len(diff_counts))) ** 0.5
 
-        print("Avg Count = ", avg)
-        print("Var Count = ", var)
+        print("Avg Count = ", count_avg)
+        print("Std err Count = ", count_var)
     elif len(diff_counts) <= 0:
         print("diff count len <= 0!")
     elif sum(diff_counts) == 0:
         print("diff count sum = 0!")
+
+    if sum(diff_mons) != 0 and len(diff_mons) > 0:
+        diff_avg = sum(diff_mons) / float(len(diff_mons))
+        diff_var = (sum((xi - diff_avg) ** 2 for xi in diff_mons) / float(len(diff_mons))) ** 0.5
+
+        print("Avg diff = ", diff_avg)
+        print("Std err diff = ", diff_var)
+
+    elif len(diff_mons) <= 0:
+        print("diff mon len <= 0!")
+    elif sum(diff_mons) == 0:
+        print("diff mon sum = 0!")
