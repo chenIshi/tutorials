@@ -2,6 +2,7 @@
 from scapy.all import *
 import time
 import struct
+import datetime
 
 # time period for trigger a poll event (ms)
 POLLING_PERIOD = 0.05
@@ -19,6 +20,8 @@ isCleanup = False
 diff_counts = []
 last_timestampA = 0
 last_timestampB = 0
+
+polling_time = 0
 
 # Control packet format
 # https://scapy.readthedocs.io/en/latest/build_dissect.html
@@ -91,7 +94,8 @@ if __name__ == "__main__":
     # TODO: add a while loop here (escape condition required though)
     for repoll in range(POLLING_NUMBER):
         # inactive phase
-        time.sleep(POLLING_PERIOD)
+        time.sleep(POLLING_PERIOD - polling_time)
+        start_time = datetime.datetime.now()
         # active phase
         retrial_times = 0
         while (not FETCH_SUCCESS) and (retrial_times < POLL_RETRIAL_MAXNUM):
@@ -105,6 +109,12 @@ if __name__ == "__main__":
             else:
                 print("Retransmittion failed in time %d" % (repoll))
             break
+        elif FETCH_SUCCESS:
+            end_time = datetime.datetime.now()
+            time_diff = end_time - start_time
+            polling_time = time_diff.total_seconds()
+            if polling_time > POLLING_PERIOD:
+                polling_time = POLLING_PERIOD
 
         FETCH_SUCCESS = False
 
