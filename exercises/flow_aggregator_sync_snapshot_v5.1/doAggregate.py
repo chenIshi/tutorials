@@ -159,8 +159,8 @@ if __name__ == "__main__":
 
         FETCH_SUCCESS = False
 
-    avg = sum(diff_counts) / len(diff_counts)
-    var = sum((xi - avg) ** 2 for xi in diff_counts) / len(diff_counts)
+    avg = sum(diff_counts) / float(len(diff_counts))
+    var = sum((xi - avg) ** 2 for xi in diff_counts) / float(len(diff_counts))
 
     print("Avg Count = ", avg)
     print("Var Count = ", var)
