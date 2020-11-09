@@ -107,7 +107,7 @@ if __name__ == "__main__":
 
         FETCH_SUCCESS = False
 
-    print("avg count = ", sum(counts) / len(counts))
+    # print("avg count = ", sum(counts) / len(counts))
 
     if sum(diff_counts) != 0 and len(diff_counts) > 0:
         avg = sum(diff_counts) / len(diff_counts)
