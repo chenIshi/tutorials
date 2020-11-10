@@ -134,6 +134,7 @@ if __name__ == "__main__":
     for repoll in range(POLLING_NUMBER):
         # inactive phase
         time.sleep(POLLING_PERIOD)
+        start_time = datetime.datetime.now()
         # active phase
         retrial_times = 0
         while (not FETCH_SUCCESS) and (retrial_times < POLL_RETRIAL_MAXNUM):
@@ -149,7 +150,7 @@ if __name__ == "__main__":
             break
         elif FETCH_SUCCESS:
             end_time = datetime.datetime.now()
-            time_diff = (end_time - start_time)
+            time_diff = end_time - start_time
             polling_time = time_diff.total_seconds()
             if polling_time > POLLING_PERIOD:
                 polling_time = POLLING_PERIOD
