@@ -5,8 +5,8 @@ import struct
 import datetime
 
 # time period for trigger a poll event (ms)
-POLLING_PERIOD = 0.2
-INSTALL_WAIT = 0.1
+POLLING_PERIOD = 1
+INSTALL_WAIT = 0.5
 LOCAL_IPADDR = "10.0.1.1"
 CTRL_PROTO = 0x9F
 CTRL_SNAPSHOT = 0x9E
@@ -70,7 +70,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
 
     # mcast to monitors
     ctrl_payload = Control_t(qid=qid, timestamp=Timestamp)
-    snapshot_payload = Snapshot_t(qid=qid, timestamp=100000,seq=Timestamp)
+    snapshot_payload = Snapshot_t(qid=qid, timestamp=500,seq=Timestamp)
 
     '''
     if isCleanup or repollNumber % RST_COUNTER_PERIOD == 0:

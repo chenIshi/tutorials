@@ -367,7 +367,7 @@ control MyIngress(inout headers hdr,
                     snapshot_timestamp.read(temp_time, (bit<32>)data_plane_queryID);
                     // no snapshot taken yet
                     if (temp_time > 0) {
-                        timestamp_t truncated_current_time = (timestamp_t)standard_metadata.ingress_global_timestamp;
+                        timestamp_t truncated_current_time = (timestamp_t)(standard_metadata.ingress_global_timestamp >> 10);
                         if (temp_time < truncated_current_time) {
                             snapshot_timestamp.write((bit<32>)data_plane_queryID, 0);
                             queryCounters.read(temp_snapshot, (bit<32>)data_plane_queryID);
@@ -527,7 +527,7 @@ control MyEgress(inout headers hdr,
         if (IS_REPLICATED(standard_metadata)) {
             aggr_unpack.apply();
             if (hdr.mySnapshot.isValid()) {
-                hdr.mySnapshot.timestamp = (timestamp_t)standard_metadata.ingress_global_timestamp + hdr.mySnapshot.timestamp;
+                hdr.mySnapshot.timestamp = (timestamp_t)(standard_metadata.ingress_global_timestamp >> 10) + hdr.mySnapshot.timestamp;
             }
         }
     }

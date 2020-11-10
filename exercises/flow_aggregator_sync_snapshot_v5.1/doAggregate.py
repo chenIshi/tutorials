@@ -5,8 +5,8 @@ import struct
 import datetime
 
 # time period for trigger a poll event (ms)
-POLLING_PERIOD = 0.05
-INSTALL_WAIT = 0.05
+POLLING_PERIOD = 1
+INSTALL_WAIT = 0.5
 LOCAL_IPADDR = "10.0.1.1"
 CTRL_PROTO = 0x9F
 CTRL_SNAPSHOT = 0x9E
