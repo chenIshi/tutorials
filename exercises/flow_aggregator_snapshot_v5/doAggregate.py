@@ -5,13 +5,13 @@ import struct
 import datetime
 
 # time period for trigger a poll event (ms)
-POLLING_PERIOD = 0.05
-INSTALL_WAIT = 0.05
+POLLING_PERIOD = 0.2
+INSTALL_WAIT = 0.1
 LOCAL_IPADDR = "10.0.1.1"
 CTRL_PROTO = 0x9F
 CTRL_SNAPSHOT = 0x9E
 POLL_RETRIAL_MAXNUM = 6
-POLLING_NUMBER = 1000
+POLLING_NUMBER = 100
 RST_COUNTER_PERIOD = 10
 # EXPECT_DIFF_COUNT = 50
 
@@ -70,7 +70,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
 
     # mcast to monitors
     ctrl_payload = Control_t(qid=qid, timestamp=Timestamp)
-    snapshot_payload = Snapshot_t(qid=qid, timestamp=50000,seq=Timestamp)
+    snapshot_payload = Snapshot_t(qid=qid, timestamp=100000,seq=Timestamp)
 
     '''
     if isCleanup or repollNumber % RST_COUNTER_PERIOD == 0:
@@ -123,6 +123,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                             end_time = datetime.datetime.now()
                             installing_time = (end_time - start_time).total_seconds()
                             if installing_time >INSTALL_WAIT:
+                                print("Warning: installing timeout: ", installing_time)
                                 installing_time = INSTALL_WAIT
                 else:
                     print("Not a control pkt")
@@ -153,6 +154,7 @@ if __name__ == "__main__":
             time_diff = end_time - start_time
             polling_time = time_diff.total_seconds()
             if polling_time > POLLING_PERIOD:
+                print("Warning: polling timeout: ", polling_time, "repoll = ", repoll)
                 polling_time = POLLING_PERIOD
 
         FETCH_SUCCESS = False
