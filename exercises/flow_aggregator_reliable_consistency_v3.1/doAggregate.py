@@ -79,7 +79,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                         timestampA = struct.unpack('>L', bytes(reply[IP].payload)[7:11])[0]
                         timestampB = struct.unpack('>L', bytes(reply[IP].payload)[11:15])[0]
                         if last_timestampA > 0 and last_timestampB > 0 and timestampA > last_timestampA and timestampB > last_timestampB:
-                            diff_counts.append((timestampA - last_timestampA + timestampB - last_timestampB) / float(2))
+                            diff_counts.append(timestampA - last_timestampA + timestampB - last_timestampB)
                             diff_mons.append(timestampA - timestampB)
                         last_timestampA = timestampA
                         last_timestampB = timestampB

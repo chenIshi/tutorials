@@ -158,7 +158,7 @@ if __name__ == "__main__":
         FETCH_SUCCESS = False
 
     avg = sum(diff_timestamp) / float(len(diff_timestamp))
-    var = sum((xi - avg) ** 2 for xi in diff_timestamp) / float(len(diff_timestamp))
+    var = (sum((xi - avg) ** 2 for xi in diff_timestamp) / float(len(diff_timestamp))) ** 0.5
 
     print("Avg Timestamp = ", avg)
     print("Var Timestamp = ", var)
