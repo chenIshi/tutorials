@@ -46,7 +46,7 @@ class Snapshot_t(Packet):
     name = "Snapshot_t "
     fields_desc = [
         ShortField("qid", 0),
-        BitField("timestamp", 0, 24),
+        BitField("timestamp", 0, 32),
         ShortField("seq", 0)
 ]
 
@@ -111,11 +111,11 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                     else:
                         print("Get Wrong Timestamp %d instead of %d" % (fetched_timestamp[0], Timestamp))
                 elif reply[IP].proto == CTRL_SNAPSHOT:
-                    fetched_seq = struct.unpack('>H', bytes(reply[IP].payload)[5:7])
+                    fetched_seq = struct.unpack('>H', bytes(reply[IP].payload)[6:8])
                     if fetched_seq[0] == Timestamp:
                         isPoll = True
                         isSnapshotToPoll = True
-                        timestamp = struct.unpack('>H', bytes(reply[IP].payload)[5:7])[0]
+                        timestamp = struct.unpack('>L', bytes(reply[IP].payload)[2:6])[0]
                         if prev_timestamp != 0 and timestamp > prev_timestamp:
                             diff_timestamp.append(timestamp - prev_timestamp)
                         prev_timestamp = timestamp
@@ -157,8 +157,8 @@ if __name__ == "__main__":
 
         FETCH_SUCCESS = False
 
-    avg = sum(diff_timestamp) / len(diff_timestamp)
-    var = sum((xi - avg) ** 2 for xi in diff_timestamp) / len(diff_timestamp)
+    avg = sum(diff_timestamp) / float(len(diff_timestamp))
+    var = sum((xi - avg) ** 2 for xi in diff_timestamp) / float(len(diff_timestamp))
 
     print("Avg Timestamp = ", avg)
     print("Var Timestamp = ", var)

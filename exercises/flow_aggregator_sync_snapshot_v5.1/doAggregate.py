@@ -48,7 +48,7 @@ class Snapshot_t(Packet):
     name = "Snapshot_t "
     fields_desc = [
         ShortField("qid", 0),
-        BitField("timestamp", 0, 24),
+        BitField("timestamp", 0, 32),
         ShortField("seq", 0)
 ]
 
@@ -116,11 +116,11 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                     else:
                         print("Get Wrong Timestamp %d instead of %d" % (fetched_timestamp[0], Timestamp))
                 elif reply[IP].proto == CTRL_SNAPSHOT:
-                    fetched_seq = struct.unpack('>H', bytes(reply[IP].payload)[5:7])
+                    fetched_seq = struct.unpack('>H', bytes(reply[IP].payload)[6:8])
                     if fetched_seq[0] == Timestamp:
                         isPoll = True
                         isSnapshotToPoll = True
-                        lastTimestamp = struct.unpack('>L', bytes(reply[IP].payload)[1:5])[0] & 0x00FFFFFF
+                        lastTimestamp = struct.unpack('>L', bytes(reply[IP].payload)[2:6])[0]
                         if not(start_time is None):
                             end_time = datetime.datetime.now()
                             time_diff = (end_time - start_time)

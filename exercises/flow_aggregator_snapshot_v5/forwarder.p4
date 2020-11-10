@@ -32,7 +32,7 @@ const bit<32> BMV2_V1MODEL_INSTANCE_TYPE_RESUBMIT      = 6;
 typedef bit<9>  egressSpec_t;
 typedef bit<48> macAddr_t;
 typedef bit<32> ip4Addr_t;
-typedef bit<24> timestamp_t;
+typedef bit<32> timestamp_t;
 
 header ethernet_t {
     macAddr_t dstAddr;
@@ -127,7 +127,7 @@ parser MyParser(packet_in packet,
 ************   C H E C K S U M    V E R I F I C A T I O N   *************
 *************************************************************************/
 
-control MyVerifyChecksum(inout headers hdr, inout metadata meta) {   
+control MyVerifyChecksum(inout headers hdr, inout metadata meta) {
     apply {  }
 }
 
@@ -179,7 +179,7 @@ control MyIngress(inout headers hdr,
     action drop() {
         mark_to_drop(standard_metadata);
     }
-    
+
     // record flow msg according to control plane config
     /* No forward if destined for self*/
     action ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {
@@ -319,12 +319,12 @@ control MyIngress(inout headers hdr,
         hdr.ethernet.dstAddr = ctrl_mac;
 
         standard_metadata.egress_spec = standard_metadata.ingress_port;
-        
+
     }
 
     action aggregateInstallAck(ip4Addr_t aggregator_ip) {
         temp_aggregator_ip = aggregator_ip;
-    } 
+    }
 
     table snapshot_handler {
         key = {
@@ -485,7 +485,7 @@ control MyIngress(inout headers hdr,
             }
         }
 
-        
+
     }
 }
 
@@ -517,8 +517,8 @@ control MyEgress(inout headers hdr,
         size = 512;
         default_action = NoAction();
     }
-    
-    apply { 
+
+    apply {
         /*
         if (standard_metadata.egress_port == standard_metadata.ingress_port) {
             drop();
