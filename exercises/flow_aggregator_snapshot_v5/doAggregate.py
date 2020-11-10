@@ -2,9 +2,11 @@
 from scapy.all import *
 import time
 import struct
+import datetime
 
 # time period for trigger a poll event (ms)
 POLLING_PERIOD = 0.05
+INSTALL_WAIT = 0.05
 LOCAL_IPADDR = "10.0.1.1"
 CTRL_PROTO = 0x9F
 CTRL_SNAPSHOT = 0x9E
@@ -21,8 +23,12 @@ isCleanup = False
 isPoll = False
 isSnapshotToPoll = False
 
-diff_counts = []
-prev_count = 0
+diff_timestamp = []
+prev_timestamp = 0
+
+polling_time = 0
+installing_time = 0;
+start_time = None
 
 # Control packet format
 # https://scapy.readthedocs.io/en/latest/build_dissect.html
@@ -46,11 +52,12 @@ class Snapshot_t(Packet):
 
 # can improve with rev-aggr maybe
 def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
-    global FETCH_SUCCESS
+    global FETCH_SUCCESS, INSTALL_WAIT
     global Timestamp
     global isCleanup, isPoll
     global isSnapshotToPoll
-    global diff_counts, prev_count
+    global diff_timestamp, prev_timestamp
+    global installing_time, start_time
 
     FETCH_SUCCESS = False
     if len(destMAC) != len(destIP):
@@ -58,12 +65,12 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
 
     # wait until the snapshot is taken
     if isSnapshotToPoll:
-        time.sleep(0.005)
+        time.sleep(INSTALL_WAIT - installing_time)
         isSnapshotToPoll = False
-    
+
     # mcast to monitors
     ctrl_payload = Control_t(qid=qid, timestamp=Timestamp)
-    snapshot_payload = Snapshot_t(qid=qid, timestamp=5,seq=Timestamp)
+    snapshot_payload = Snapshot_t(qid=qid, timestamp=50000,seq=Timestamp)
 
     '''
     if isCleanup or repollNumber % RST_COUNTER_PERIOD == 0:
@@ -79,7 +86,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     for mon_idx in range(len(destIP)):
         poll_pkt[Ether].dst = destMAC[mon_idx]
         poll_pkt[IP].dst = destIP[mon_idx]
-        
+
         reply = srp1(poll_pkt, timeout=POLLING_PERIOD, verbose=0)
         if not (reply is None):
             if IP in reply:
@@ -92,10 +99,12 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                         unpure_flags = struct.unpack('>B', bytes(reply[IP].payload)[2:3])
                         overflow_flags = (unpure_flags[0] & 0b10000000) >> 7
                         cleanup_flags = (unpure_flags[0] & 0b01000000) >> 6
+                        '''
                         count = struct.unpack('>L', bytes(reply[IP].payload)[1:5])[0] & 0x003FFFFF
                         if prev_count != 0:
                             diff_counts.append(count - prev_count)
                         prev_count = count
+                        '''
                         if overflow_flags == 1:
                             print("Overflowed!")
                         # print("Polled %d" % (fetched_timestamp[0]))
@@ -106,6 +115,15 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                     if fetched_seq[0] == Timestamp:
                         isPoll = True
                         isSnapshotToPoll = True
+                        timestamp = struct.unpack('>H', bytes(reply[IP].payload)[5:7])[0]
+                        if prev_timestamp != 0 and timestamp > prev_timestamp:
+                            diff_timestamp.append(timestamp - prev_timestamp)
+                        prev_timestamp = timestamp
+                        if not (start_time is None):
+                            end_time = datetime.datetime.now()
+                            installing_time = (end_time - start_time).total_seconds()
+                            if installing_time >INSTALL_WAIT:
+                                installing_time = INSTALL_WAIT
                 else:
                     print("Not a control pkt")
             else:
@@ -129,11 +147,17 @@ if __name__ == "__main__":
             else:
                 print("Retransmittion failed in time %d" % (repoll))
             break
+        elif FETCH_SUCCESS:
+            end_time = datetime.datetime.now()
+            time_diff = (end_time - start_time)
+            polling_time = time_diff.total_seconds()
+            if polling_time > POLLING_PERIOD:
+                polling_time = POLLING_PERIOD
 
         FETCH_SUCCESS = False
 
-    avg = sum(diff_counts) / len(diff_counts)
-    var = sum((xi - avg) ** 2 for xi in diff_counts) / len(diff_counts)
+    avg = sum(diff_timestamp) / len(diff_timestamp)
+    var = sum((xi - avg) ** 2 for xi in diff_timestamp) / len(diff_timestamp)
 
-    print("Avg Count = ", avg)
-    print("Var Count = ", var)
+    print("Avg Timestamp = ", avg)
+    print("Var Timestamp = ", var)

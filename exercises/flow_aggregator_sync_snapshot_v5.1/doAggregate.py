@@ -6,6 +6,7 @@ import datetime
 
 # time period for trigger a poll event (ms)
 POLLING_PERIOD = 0.05
+INSTALL_WAIT = 0.05
 LOCAL_IPADDR = "10.0.1.1"
 CTRL_PROTO = 0x9F
 CTRL_SNAPSHOT = 0x9E
@@ -53,7 +54,7 @@ class Snapshot_t(Packet):
 
 # can improve with rev-aggr maybe
 def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
-    global FETCH_SUCCESS
+    global FETCH_SUCCESS, INSTALL_WAIT
     global Timestamp
     global isCleanup, isPoll
     global isSnapshotToPoll
@@ -67,7 +68,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
 
     # wait until the snapshot is taken
     if isSnapshotToPoll:
-        time.sleep(0.02 - installing_time)
+        time.sleep(INSTALL_WAIT - installing_time)
         isSnapshotToPoll = False
 
     # mcast to monitors
@@ -76,7 +77,7 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
     if lastTimestamp == 0:
         snapshot_payload.timestamp = 0
     else:
-        snapshot_payload.timestamp = lastTimestamp + 20
+        snapshot_payload.timestamp = lastTimestamp + 20000
 
     '''
     if isCleanup or repollNumber % RST_COUNTER_PERIOD == 0:
@@ -124,8 +125,8 @@ def mpoll(destMAC, destIP, qid, timestamp, repollNumber):
                             end_time = datetime.datetime.now()
                             time_diff = (end_time - start_time)
                             installing_time = time_diff.total_seconds()
-                            if installing_time > 0.02:
-                                installing_time = 0.02
+                            if installing_time > INSTALL_WAIT:
+                                installing_time = INSTALL_WAIT
                 else:
                     print("Not a control pkt")
             else:
