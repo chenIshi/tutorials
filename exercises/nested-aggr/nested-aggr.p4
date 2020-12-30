@@ -107,6 +107,17 @@ control MyIngress(inout headers hdr,
         mark_to_drop(standard_metadata);
     }
 
+    action do_myforward(egressSpec_t port) {
+        standard_metadata.egress_spec = port;
+    }
+
+    action do_response() {
+        standard_metadata.egress_spec=standard_metadata.ingress_port;
+        meta.tmpID = hdr.myforward.dstID;
+        hdr.myforward.dstID = hdr.myforward.srcID;
+        hdr.myforward.srcID = meta.tmpID;
+    }
+
     table may_forward {
         key = {
             hdr.myforward.dstID: exact;
@@ -119,17 +130,6 @@ control MyIngress(inout headers hdr,
         }
         size = 256;
         default_action = drop();
-    }
-
-    action do_myforward(egressSpec_t port) {
-        standard_metadata.egress_spec = port;
-    }
-
-    action do_response() {
-        standard_metadata.egress_spec=standard_metadata.ingress_port;
-        meta.tmpID = hdr.myforward.dstID;
-        hdr.myforward.dstID = hdr.myforward.srcID;
-        hdr.myforward.srcID = meta.tmpID;
     }
 
     action ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {

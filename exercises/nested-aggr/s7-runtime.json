@@ -73,7 +73,7 @@
       "match": {
         "hdr.myforward.dstID": 0
       },
-      "action_name": "MyIngress.ipv4_forward",
+      "action_name": "MyIngress.do_myforward",
       "action_params": {
         "port": 1
       }
